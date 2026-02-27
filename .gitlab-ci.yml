@@ -1,0 +1,84 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH =~ /release.*/'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+
+variables:
+  SAST_EXCLUDED_PATHS: "packages/docs,tests,utils"
+
+default:
+  image: node:20
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+
+stages:
+  - test
+  - build
+  - publish
+
+include:
+  - project: "flywheel-io/infrastructure/ci-templates"
+    ref: master
+    file: "security-scans.yml"
+
+.install_bun: &install_bun
+  - |
+    if [ ! -d "$HOME/.bun" ]; then
+      curl -fsSL https://bun.sh/install | bash
+    fi
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+
+.setup_git: &setup_git
+  - |
+    git config user.email "bot@flywheel.io"
+    git config user.name "Flywheel Bot"
+    git remote set-url origin https://${GITLAB_CI_BOT_USERNAME}:${GITLAB_CI_BOT_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git
+    BRANCH_NAME=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}
+    git fetch origin --tags "$BRANCH_NAME"
+    git checkout "$BRANCH_NAME"
+
+
+build:
+  stage: build
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip ci\]/'
+      when: never
+    - when: on_success
+  before_script:
+    - *install_bun
+  script:
+    - bun flywheel/scripts/version.ts
+    - yarn install
+    - bun run build
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist/
+      - packages/*/dist/
+
+publish:
+  stage: publish
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip ci\]/'
+      when: never
+    - when: on_success
+  before_script:
+    - *install_bun
+    - *setup_git
+    - echo "//${CI_API_V4_URL#https://}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" > .npmrc
+  script: |
+      bun flywheel/scripts/version.ts
+      export NPM_CONFIG_TOKEN=$CI_JOB_TOKEN
+      if [[ "$CI_COMMIT_BRANCH" =~ ^release.* ]]; then
+        bun flywheel/scripts/publishVersion.ts
+        bun flywheel/scripts/publishPackage.ts
+      else
+        bun flywheel/scripts/publishVersion.ts --no-commit --no-lerna
+        bun flywheel/scripts/publishPackage.ts --no-lerna
+      fi
