@@ -67,3 +67,9 @@ coverage/
 CLAUDE.md
 # External repositories
 vtk-js/
+
+# Flywheel-specific
+.npmrc
+gl-sast-report.json
+gl-sbom-npm-yarn.cdx.json
+gl-secret-detection-report.json

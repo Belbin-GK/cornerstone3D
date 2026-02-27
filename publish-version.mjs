@@ -101,11 +101,11 @@ async function run() {
   }
 
   // remove the .npmrc to not accidentally publish to npm
-  const localNpmrc = '.npmrc';
-  const repoNpmrc = path.join(os.homedir(), 'repo/.npmrc');
+  // const localNpmrc = '.npmrc';
+  // const repoNpmrc = path.join(os.homedir(), 'repo/.npmrc');
 
-  await unlinkFile(localNpmrc);
-  await unlinkFile(repoNpmrc);
+  // await unlinkFile(localNpmrc);
+  // await unlinkFile(repoNpmrc);
 
   // Todo: Do we really need to run the build command here?
   // Maybe we need to hook the netlify deploy preview
@@ -134,8 +134,8 @@ async function run() {
     '--message',
     'chore(version): Update package versions [skip ci]',
     '--conventional-commits',
-    '--create-release',
-    'github',
+    // '--create-release',
+    // 'github',
   ]);
 
   console.log('Version set using lerna');

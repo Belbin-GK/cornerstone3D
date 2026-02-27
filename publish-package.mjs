@@ -23,8 +23,10 @@ async function run() {
       'from-package',
       '--no-verify-access',
       '--yes',
-      '--dist-tag',
-      'beta',
+      '--registry',
+      'https://gitlab.com/api/v4/projects/72780435/packages/npm/',
+      // '--dist-tag',
+      // 'beta',
     ]);
   }
 
