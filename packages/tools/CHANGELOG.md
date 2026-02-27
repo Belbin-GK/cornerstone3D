@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 4.15.29-flywheel.0 (2026-02-27)
+
+### Bug Fixes
+
+- **HistoryMemo:** Fix the undo/redo of labelmap and contour delete ([#2593](https://github.com/cornerstonejs/cornerstone3D/issues/2593)) ([0f683a8](https://github.com/cornerstonejs/cornerstone3D/commit/0f683a84c7187746ad3179021b89207d4b8d1221))
+- **jump-to-label-map:** Handle case in `getReferenceVolumeForSegmentationVolume` where the volume is built from the segmentation's image IDs. ([#2592](https://github.com/cornerstonejs/cornerstone3D/issues/2592)) ([753e212](https://github.com/cornerstonejs/cornerstone3D/commit/753e21214f5cb48d5516117a58afbdde5668d9c9))
+- **tools:** add left and right click tools example with annotation functionality ([#2581](https://github.com/cornerstonejs/cornerstone3D/issues/2581)) ([294ee28](https://github.com/cornerstonejs/cornerstone3D/commit/294ee2829a0cd168a0ceac7edb0e5832b06aa5fb))
+- Wrong calculation of rectangle size using indexes ([#2591](https://github.com/cornerstonejs/cornerstone3D/issues/2591)) ([e51a7bb](https://github.com/cornerstonejs/cornerstone3D/commit/e51a7bbb5d4c4a8d61066b6c02a866a3d325feee))
+
 ## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
 
 ### Bug Fixes

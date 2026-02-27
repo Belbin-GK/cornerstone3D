@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 4.15.29-flywheel.0 (2026-02-27)
+
+### Bug Fixes
+
+- **tools:** add left and right click tools example with annotation functionality ([#2581](https://github.com/cornerstonejs/cornerstone3D/issues/2581)) ([294ee28](https://github.com/cornerstonejs/cornerstone3D/commit/294ee2829a0cd168a0ceac7edb0e5832b06aa5fb))
+
 ## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
