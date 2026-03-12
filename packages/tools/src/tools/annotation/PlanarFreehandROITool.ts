@@ -702,7 +702,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data, invalidated } = annotation;
+    const cachedStats = data && data.cachedStats;
+
+    if (invalidated || !cachedStats?.[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -839,22 +842,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
       const calibratedScale = getCalibratedLengthUnitsAndScale(image, handles);
 
-      // Using an arbitrary start point (canvasPoint), calculate the
-      // mm spacing for the canvas in the X and Y directions.
-      const canvasPoint = canvasCoordinates[0];
-      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
-      const deltaXPoint = viewport.canvasToWorld([
-        canvasPoint[0] + 1,
-        canvasPoint[1],
-      ]);
-      const deltaYPoint = viewport.canvasToWorld([
-        canvasPoint[0],
-        canvasPoint[1] + 1,
-      ]);
-
-      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
-      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
-
       const statsArgs = {
         targetId,
         viewport,
@@ -865,8 +852,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         cachedStats,
         modalityUnit,
         calibratedScale,
-        deltaInX,
-        deltaInY,
       };
       if (closed) {
         this.updateClosedCachedStats(statsArgs);
@@ -900,14 +885,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     canvasCoordinates,
     calibratedScale,
-    deltaInX,
-    deltaInY,
   }) {
-    const { scale, areaUnit, unit } = calibratedScale;
+    const { scale, areaUnit, unit, scaleY } = calibratedScale;
 
     const { voxelManager } = viewport.getImageData();
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
+    const dims = imageData.getDimensions();
 
     let iMin = Number.MAX_SAFE_INTEGER;
     let iMax = Number.MIN_SAFE_INTEGER;
@@ -917,7 +901,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
+      const worldPosIndex = indexPoints[j].map((v) => Math.floor(v + 1e-3));
+
+      worldPosIndex[0] = Math.max(0, Math.min(dims[0] - 1, worldPosIndex[0]));
+      worldPosIndex[1] = Math.max(0, Math.min(dims[1] - 1, worldPosIndex[1]));
+      worldPosIndex[2] = Math.max(0, Math.min(dims[2] - 1, worldPosIndex[2]));
+
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
 
@@ -928,9 +917,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
 
-    let area = polyline.getArea(canvasCoordinates) / scale / scale;
-    // Convert from canvas_pixels ^2 to mm^2
-    area *= deltaInX * deltaInY;
+    /**
+     * Calculates physical area from index-based area (Shoelace formula).
+     * We must use both 'scale' (X-direction) and 'scaleY' (Y-direction)
+     * because the pixel spacing may be anisotropic (scale != scaleY).
+     */
+    const area = polyline.getArea(indexPoints) / scale / scaleY;
 
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
@@ -970,11 +962,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         {
           imageData,
           isInObject: (pointLPS, _pointIJK) => {
-            let result = true;
             const point = viewport.worldToCanvas(pointLPS);
-            if (point[1] != curRow) {
+            const row = Math.floor(point[1]);
+
+            if (row !== curRow) {
               intersectionCounter = 0;
-              curRow = point[1];
+              curRow = row;
               intersections = getLineSegmentIntersectionsCoordinates(
                 canvasCoordinates,
                 point,
@@ -996,10 +989,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
               intersections.shift();
               intersectionCounter++;
             }
-            if (intersectionCounter % 2 === 0) {
-              result = false;
-            }
-            return result;
+
+            return intersectionCounter % 2 === 1;
           },
           boundsIJK,
           returnPoints: this.configuration.storePointData,

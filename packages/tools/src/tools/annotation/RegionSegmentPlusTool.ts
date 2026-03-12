@@ -14,9 +14,16 @@ import type {
 } from '../base/GrowCutBaseTool';
 import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 import { ToolModes } from '../../enums';
+import {
+  DEFAULT_NEGATIVE_STD_DEV_MULTIPLIER,
+  DEFAULT_NEIGHBORHOOD_RADIUS,
+  DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+} from '../../utilities/segmentation/growCut/constants';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
+  maxPositiveSeeds?: number;
+  minNegativeSeeds?: number;
 };
 
 class RegionSegmentPlusTool extends GrowCutBaseTool {
@@ -33,6 +40,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
+        initialNeighborhoodRadius: DEFAULT_NEIGHBORHOOD_RADIUS,
+        positiveStdDevMultiplier: DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+        negativeStdDevMultiplier: DEFAULT_NEGATIVE_STD_DEV_MULTIPLIER,
+        positiveNegativeThreshold: 20,
+        minNegativeSeeds: 30,
+        maxPositiveSeeds: 100000,
         islandRemoval: {
           /**
            * Enable/disable island removal
@@ -85,13 +98,16 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     const { positiveSeedIndices, negativeSeedIndices } = seeds;
 
+    const { positiveNegativeThreshold, minNegativeSeeds } = this.configuration;
+
     // if the ratio of positive to negative is significant, this is not a good
     // seed and we should not run grow cut. These are just heuristics numbers
     // and can be adjusted.
     let cursor;
     if (
-      positiveSeedIndices.size / negativeSeedIndices.size > 20 ||
-      negativeSeedIndices.size < 30
+      positiveSeedIndices.size / negativeSeedIndices.size >
+        positiveNegativeThreshold ||
+      negativeSeedIndices.size < minNegativeSeeds
     ) {
       cursor = 'not-allowed';
       this.allowedToProceed = false;
@@ -148,10 +164,35 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     await super.preMouseDownCallback(evt);
 
+    const {
+      isPartialVolume,
+      positiveSeedVariance,
+      negativeSeedVariance,
+      subVolumePaddingPercentage,
+      initialNeighborhoodRadius,
+      positiveStdDevMultiplier,
+      negativeStdDevMultiplier,
+      islandRemoval,
+      maxPositiveSeeds,
+      minNegativeSeeds,
+    } = this.configuration;
+
     this.growCutData = csUtils.deepMerge(this.growCutData, {
       worldPoint,
       islandRemoval: {
         worldIslandPoints: [worldPoint],
+      },
+      options: {
+        isPartialVolume,
+        positiveSeedVariance,
+        negativeSeedVariance,
+        subVolumePaddingPercentage,
+        initialNeighborhoodRadius,
+        positiveStdDevMultiplier,
+        negativeStdDevMultiplier,
+        islandRemoval,
+        maxPositiveSeeds,
+        minNegativeSeeds,
       },
     });
 
