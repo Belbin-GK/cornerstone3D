@@ -122,7 +122,7 @@ class EllipticalROI extends BaseAdapter3D {
     const { data, finding, findingSites, metadata } = tool;
     const { cachedStats = {}, handles } = data;
     const rotation = data.initialRotation || 0;
-    const { referencedImageId } = metadata;
+    const { referencedImageId, volumeId } = metadata;
     const scoordProps = {
       is3DMeasurement,
       referencedImageId,
@@ -164,7 +164,13 @@ class EllipticalROI extends BaseAdapter3D {
     }
 
     const { area, max, min, mean, stdDev, modalityUnit, areaUnit } =
-      cachedStats[`imageId:${referencedImageId}`] || {};
+      cachedStats[`imageId:${referencedImageId}`] ||
+      cachedStats[
+        Object.keys(cachedStats).find((k) =>
+          k.startsWith(`volumeId:${volumeId}`)
+        )
+      ] ||
+      {};
 
     const convertedPoints = points.map((point) => toScoord(scoordProps, point));
 
