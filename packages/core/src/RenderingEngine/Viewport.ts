@@ -50,6 +50,7 @@ import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
 import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
+import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -72,6 +73,7 @@ class Viewport {
     rotation: true,
     pan: true,
     zoom: true,
+    aspectRatio: true,
     displayArea: true,
   };
 
@@ -1058,12 +1060,14 @@ class Viewport {
     resetZoom?: boolean;
     resetToCenter?: boolean;
     storeAsInitialCamera?: boolean;
+    resetAspectRatio?: boolean;
   }): boolean {
     const {
       resetPan = true,
       resetZoom = true,
       resetToCenter = true,
       storeAsInitialCamera = true,
+      resetAspectRatio = true,
     } = options || {};
 
     const renderer = this.getRenderer();
@@ -1192,6 +1196,7 @@ class Viewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
+      aspectRatio: resetAspectRatio && [1, 1],
     });
 
     const modifiedCamera = this.getCamera();
@@ -1376,6 +1381,36 @@ class Viewport {
   }
 
   /**
+   * Returns the current aspect ratio of the viewport as a 2D point `[widthRatio, heightRatio]`.
+   *
+   * @returns The current aspect ratio `[widthRatio, heightRatio]`
+   *          based on the active camera settings.
+   */
+  public getAspectRatio(): Point2 {
+    const { aspectRatio } = this.getCamera();
+    return aspectRatio;
+  }
+
+  /**
+   * Sets the aspect ratio of the viewport using the provided 2D point `[widthRatio, heightRatio]`.
+   *
+   * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
+   * @param storeAsInitialCamera - Whether to store the updated camera state as the initial camera.
+   *                               Defaults to `false`.
+   */
+  public setAspectRatio(value: Point2, storeAsInitialCamera = false): void {
+    const camera = this.getCamera();
+
+    this.setCamera(
+      {
+        ...camera,
+        aspectRatio: value,
+      },
+      storeAsInitialCamera
+    );
+  }
+
+  /**
    * Because the focalPoint is always in the centre of the viewport,
    * we must do planar computations if the frame (image "slice") is to be preserved.
    * 1. Calculate the intersection of the view plane with the imageData
@@ -1438,7 +1473,7 @@ class Viewport {
   }
 
   protected getCameraNoRotation(): ICamera {
-    const vtkCamera = this.getVtkActiveCamera();
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
 
     // Helper function to replace NaN vectors with defaults
     const sanitizeVector = (vector: Point3, defaultValue: Point3): Point3 => {
@@ -1473,6 +1508,7 @@ class Viewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+      aspectRatio: vtkCamera.getAspectRatio(),
     };
   }
 
@@ -1499,7 +1535,7 @@ class Viewport {
     cameraInterface: ICamera,
     storeAsInitialCamera = false
   ): void {
-    const vtkCamera = this.getVtkActiveCamera();
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
     const previousCamera = this.getCamera();
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
@@ -1512,6 +1548,7 @@ class Viewport {
       flipHorizontal,
       flipVertical,
       clippingRange,
+      aspectRatio,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1571,6 +1608,10 @@ class Viewport {
 
     if (clippingRange !== undefined) {
       vtkCamera.setClippingRange(clippingRange);
+    }
+
+    if (aspectRatio) {
+      vtkCamera.setAspectRatio(aspectRatio);
     }
 
     // update clipping range only if focal point changed of a new actor is added
@@ -1967,6 +2008,7 @@ class Viewport {
       displayArea: true,
       zoom: true,
       pan: true,
+      aspectRatio: true,
       flipHorizontal: true,
       flipVertical: true,
     }
@@ -1986,9 +2028,17 @@ class Viewport {
     if (zoom) {
       target.zoom = initZoom;
     }
+    const currentAspectRatio = this.getAspectRatio();
+    target.aspectRatio = currentAspectRatio;
     if (pan) {
-      target.pan = this.getPan();
-      vec2.scale(target.pan, target.pan, 1 / initZoom);
+      const currentPan = this.getPan();
+      const [aspectX, aspectY] = currentAspectRatio;
+
+      // Normalize pan to remove effect of zoom and stretch
+      const normalizedPanX = currentPan[0] / (initZoom * aspectX);
+      const normalizedPanY = currentPan[1] / (initZoom * aspectY);
+
+      target.pan = [normalizedPanX, normalizedPanY] as Point2;
     }
 
     if (flipHorizontal) {
@@ -2020,6 +2070,7 @@ class Viewport {
       displayArea,
       zoom = this.getZoom(),
       pan,
+      aspectRatio = this.getAspectRatio(),
       rotation,
       flipHorizontal = this.flipHorizontal,
       flipVertical = this.flipVertical,
@@ -2031,6 +2082,8 @@ class Viewport {
     if (pan) {
       this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
     }
+
+    this.setAspectRatio(aspectRatio);
 
     // flip operation requires another re-render to take effect, so unfortunately
     // right now if the view presentation requires a flip, it will flicker. The

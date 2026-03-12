@@ -30,6 +30,10 @@ type GrowCutOneClickOptions = GrowCutOptions & {
   positiveSeedValue?: number;
   // The value assigned to negative seeds in the labelmap.
   negativeSeedValue?: number;
+  // Minimum number of negative seeds used to constrain region growth
+  minNegativeSeeds?: number;
+  // Maximum number of positive seeds to prevent excessive growth
+  maxPositiveSeeds?: number;
   seeds?: {
     positiveSeedIndices: Set<number>;
     negativeSeedIndices: Set<number>;
@@ -37,6 +41,7 @@ type GrowCutOneClickOptions = GrowCutOptions & {
 };
 
 const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to prevent excessive growth
+const MIN_NEGATIVE_SEEDS = 10; // Minimum number of negative seeds used to constrain region growth
 
 /**
  * Calculates positive and negative seed indices for the GrowCut algorithm based on a single click.
@@ -70,6 +75,7 @@ function calculateGrowCutSeeds(
     options?.negativeSeedMargin ?? DEFAULT_NEGATIVE_SEED_MARGIN;
   const negativeSeedsTargetPatches =
     options?.negativeSeedsTargetPatches ?? DEFAULT_NEGATIVE_SEEDS_COUNT;
+  const maxPositiveSeeds = options?.maxPositiveSeeds ?? MAX_POSITIVE_SEEDS;
 
   const ijkStart = transformWorldToIndex(refImageData, worldPosition).map(
     Math.round
@@ -147,7 +153,7 @@ function calculateGrowCutSeeds(
   let currentQueueIndex = 0;
   while (
     currentQueueIndex < queue.length &&
-    positiveSeedIndices.size < MAX_POSITIVE_SEEDS
+    positiveSeedIndices.size < maxPositiveSeeds
   ) {
     const [x, y, z] = queue[currentQueueIndex++];
 
@@ -186,16 +192,16 @@ function calculateGrowCutSeeds(
         neighborValue <= positiveIntensityMax
       ) {
         positiveSeedIndices.add(neighborIndex);
-        if (positiveSeedIndices.size < MAX_POSITIVE_SEEDS) {
+        if (positiveSeedIndices.size < maxPositiveSeeds) {
           queue.push([nx, ny, nz]);
         }
       }
     }
   }
 
-  if (positiveSeedIndices.size >= MAX_POSITIVE_SEEDS) {
+  if (positiveSeedIndices.size >= maxPositiveSeeds) {
     console.debug(
-      `Reached maximum number of positive seeds (${MAX_POSITIVE_SEEDS}). Stopping BFS.`
+      `Reached maximum number of positive seeds (${maxPositiveSeeds}). Stopping BFS.`
     );
   }
 
@@ -337,6 +343,8 @@ async function runOneClickGrowCut({
 
   const positiveSeedLabel = options?.positiveSeedValue ?? POSITIVE_SEED_LABEL;
   const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
+  const maxPositiveSeeds = options?.maxPositiveSeeds ?? MAX_POSITIVE_SEEDS;
+  const minNegativeSeeds = options?.minNegativeSeeds ?? MIN_NEGATIVE_SEEDS;
 
   if (!seeds) {
     return null;
@@ -346,8 +354,8 @@ async function runOneClickGrowCut({
 
   if (
     positiveSeedIndices.size < 10 ||
-    positiveSeedIndices.size > MAX_POSITIVE_SEEDS ||
-    negativeSeedIndices.size < 10
+    positiveSeedIndices.size > maxPositiveSeeds ||
+    negativeSeedIndices.size < minNegativeSeeds
   ) {
     console.warn(
       'Not enough seeds found. GrowCut might fail or produce poor results.'
