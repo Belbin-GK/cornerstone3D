@@ -60,7 +60,7 @@ export default class Length extends BaseAdapter3D {
     const { data, finding, findingSites, metadata } = tool;
     const { cachedStats = {}, handles } = data;
 
-    const { referencedImageId } = metadata;
+    const { referencedImageId, volumeId } = metadata;
     const scoordProps = {
       is3DMeasurement,
       referencedImageId,
@@ -71,7 +71,13 @@ export default class Length extends BaseAdapter3D {
     const point2 = toScoord(scoordProps, handles.points[1]);
 
     const { length: distance } =
-      cachedStats[`imageId:${referencedImageId}`] || {};
+      cachedStats[`imageId:${referencedImageId}`] ||
+      cachedStats[
+        Object.keys(cachedStats).find((k) =>
+          k.startsWith(`volumeId:${volumeId}`)
+        )
+      ] ||
+      {};
 
     return {
       point1,
