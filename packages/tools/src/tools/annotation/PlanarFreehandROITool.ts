@@ -901,20 +901,34 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map((v) => Math.floor(v + 1e-3));
+      const worldPosIndex = indexPoints[j];
 
       worldPosIndex[0] = Math.max(0, Math.min(dims[0] - 1, worldPosIndex[0]));
       worldPosIndex[1] = Math.max(0, Math.min(dims[1] - 1, worldPosIndex[1]));
       worldPosIndex[2] = Math.max(0, Math.min(dims[2] - 1, worldPosIndex[2]));
 
-      iMin = Math.min(iMin, worldPosIndex[0]);
-      iMax = Math.max(iMax, worldPosIndex[0]);
+      // For X and Y we compute the ROI bounds in the image grid. Using floor ensures
+      // the bounding box starts at the containing pixel index (top-left pixel in the
+      // image grid).
+      const xi = Math.floor(worldPosIndex[0] + EPSILON);
+      const yi = Math.floor(worldPosIndex[1] + EPSILON);
 
-      jMin = Math.min(jMin, worldPosIndex[1]);
-      jMax = Math.max(jMax, worldPosIndex[1]);
+      iMin = Math.min(iMin, xi);
+      iMax = Math.max(iMax, xi);
 
-      kMin = Math.min(kMin, worldPosIndex[2]);
-      kMax = Math.max(kMax, worldPosIndex[2]);
+      jMin = Math.min(jMin, yi);
+      jMax = Math.max(jMax, yi);
+
+      // Each slice represents a voxel slab with a finite thickness, and the voxel
+      // index corresponds to the center of that slab. When converting world
+      // coordinates back to index space, floating-point precision can produce
+      // slightly offset fractional indices. Rounding ensures the annotation
+      // maps to the nearest slice instead of unintentionally shifting to an adjacent
+      // slice.
+      const zi = Math.round(worldPosIndex[2] + EPSILON);
+
+      kMin = Math.min(kMin, zi);
+      kMax = Math.max(kMax, zi);
     }
 
     /**
@@ -955,7 +969,34 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let intersections = [];
     let intersectionCounter = 0;
 
+    const { viewPlaneNormal } = viewport.getCamera();
+
+    /**
+     * Detect if the current viewport orientation is oblique.
+     * For oblique planes, the worldToCanvas transformation can produce
+     * slightly different floating-point Y values for points that belong
+     * to the same scanline due to floating-point precision and projection.
+     *
+     * This causes the scanline intersection logic to reset frequently,
+     * resulting in missing voxels and incorrect min/max/density statistics.
+     *
+     * To stabilize scanline detection, we introduce a tolerance (rowDelta)
+     * when comparing the current canvas Y coordinate with the previous row.
+     *
+     * - For orthogonal views, no tolerance is required (rowDelta = 0).
+     * - For oblique views, we allow a small half-pixel tolerance (0.5)
+     *   so that points with very small floating-point differences are
+     *   treated as belonging to the same scanline.
+     */
+    const TOLERANCE = 0.5;
+
+    const isOblique =
+      viewPlaneNormal.filter((c) => Math.abs(c) > EPSILON).length > 1;
+
+    const rowDelta = isOblique ? TOLERANCE : 0;
+
     let pointsInShape;
+
     if (voxelManager) {
       pointsInShape = voxelManager.forEach(
         this.configuration.statsCalculator.statsCallback,
@@ -963,11 +1004,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           imageData,
           isInObject: (pointLPS, _pointIJK) => {
             const point = viewport.worldToCanvas(pointLPS);
-            const row = Math.floor(point[1]);
 
-            if (row !== curRow) {
+            // Use tolerance-based comparison to avoid scanline resets caused
+            // by floating-point precision differences in oblique projections.
+            if (Math.abs(point[1] - curRow) > rowDelta) {
               intersectionCounter = 0;
-              curRow = row;
+              curRow = point[1];
               intersections = getLineSegmentIntersectionsCoordinates(
                 canvasCoordinates,
                 point,
