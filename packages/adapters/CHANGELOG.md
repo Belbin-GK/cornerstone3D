@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.29-flywheel.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.4...v4.15.29-flywheel.5) (2026-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [4.15.29-flywheel.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.3...v4.15.29-flywheel.4) (2026-03-31)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
