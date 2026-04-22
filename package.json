@@ -140,7 +140,7 @@
     "karma-webpack": "5.0.1",
     "lerna": "9.0.7",
     "lint-staged": "13.3.0",
-    "lodash": "4.17.21",
+    "lodash": "4.18.1",
     "mocha": "10.8.2",
     "nyc": "17.1.0",
     "open-cli": "7.2.0",
@@ -194,7 +194,7 @@
     "caniuse-lite": "1.0.30001734"
   },
   "resolutions": {
-    "axios": "1.13.5",
+    "axios": "1.15.0",
     "buffer": "6.0.3",
     "node-forge": "1.4.0",
     "canvas": "3.2.0",
