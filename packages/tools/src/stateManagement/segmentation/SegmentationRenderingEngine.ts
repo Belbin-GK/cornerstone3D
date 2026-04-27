@@ -212,7 +212,11 @@ class SegmentationRenderingEngine {
             }
           });
         } catch (error) {
-          console.error(error);
+          if (process.env.NODE_ENV === 'production') {
+            console.error('Error while segmentation render');
+          } else {
+            console.error(error);
+          }
         }
 
         return Promise.resolve({
