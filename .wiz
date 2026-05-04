@@ -1,0 +1,30 @@
+# vim: ft=yaml
+
+ignore:
+  vulnerabilities:
+    ALL:
+      /.webpack/*: {}
+      /.webpack/**/*: {}
+      /flywheel/**/*: {}
+      /karma.conf.js: {}
+      /packages/docs/**/*: {}
+      /packages/*/examples/**/*: {}
+      /publish-version.mjs: {}
+      /scripts/*: {}
+      /scripts/**/*: {}
+      /utils/*: {}
+      /utils/**/*: {}
+  sast:
+    ALL:
+      /.webpack/*: {}
+      /.webpack/**/*: {}
+      /flywheel/**/*: {}
+      /karma.conf.js: {}
+      /packages/docs/**/*: {}
+      /packages/*/examples/**/*: {}
+      /publish-version.mjs: {}
+      /scripts/*: {}
+      /scripts/**/*: {}
+      /utils/*: {}
+      /utils/**/*: {}
+    
