@@ -218,6 +218,7 @@
     "**/anymatch/picomatch": "2.3.2",
     "**/micromatch/picomatch": "2.3.2",
     "**/jest-util/picomatch": "2.3.2",
-    "**/readdirp/picomatch": "2.3.2"
+    "**/readdirp/picomatch": "2.3.2",
+    "protobufjs" : "8.0.3"
   }
 }
