@@ -42,6 +42,7 @@ function internalAddSegmentationRepresentation(
       segmentationId,
       representationInput.type
     );
+    triggerSegmentationDataModified(segmentationId);
   }
 
   // Initialize the active segment index to the first available segment if none is currently set
@@ -61,10 +62,6 @@ function internalAddSegmentationRepresentation(
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);
-  }
-
-  if (representationInput.type === SegmentationRepresentations.Surface) {
-    triggerSegmentationDataModified(segmentationId);
   }
 
   triggerSegmentationModified(segmentationId);
