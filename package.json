@@ -72,7 +72,7 @@
     "@babel/plugin-proposal-object-rest-spread": "7.20.7",
     "@babel/plugin-transform-class-static-block": "7.26.0",
     "@babel/plugin-transform-runtime": "7.26.10",
-    "@babel/preset-env": "7.26.9",
+    "@babel/preset-env": "7.29.5",
     "@babel/preset-react": "7.26.3",
     "@babel/preset-typescript": "7.26.0",
     "@babel/runtime": "7.26.10",
@@ -209,7 +209,7 @@
     "handlebars": "4.7.9",
     "flatted": "3.4.2",
     "socket.io-parser": "^4.2.6",
-    "**/@itk-wasm/dam/tar":  "7.5.11",
+    "**/@itk-wasm/dam/tar": "7.5.11",
     "**/express/path-to-regexp": "0.1.13",
     "karma-webpack/minimatch": "9.0.7",
     "**/karma/minimatch": "3.1.4",
@@ -219,6 +219,6 @@
     "**/micromatch/picomatch": "2.3.2",
     "**/jest-util/picomatch": "2.3.2",
     "**/readdirp/picomatch": "2.3.2",
-    "protobufjs" : "8.0.3"
+    "protobufjs": "8.0.3"
   }
 }
