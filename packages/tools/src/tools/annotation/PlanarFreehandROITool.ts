@@ -842,6 +842,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
       const calibratedScale = getCalibratedLengthUnitsAndScale(image, handles);
 
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
       const statsArgs = {
         targetId,
         viewport,
@@ -852,6 +868,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         cachedStats,
         modalityUnit,
         calibratedScale,
+        deltaInX,
+        deltaInY,
       };
       if (closed) {
         this.updateClosedCachedStats(statsArgs);
@@ -885,58 +903,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     canvasCoordinates,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
-    const { scale, areaUnit, unit, scaleY } = calibratedScale;
+    const { areaUnit, unit } = calibratedScale;
 
     const { voxelManager } = viewport.getImageData();
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
-    const dims = imageData.getDimensions();
 
-    let iMin = Number.MAX_SAFE_INTEGER;
-    let iMax = Number.MIN_SAFE_INTEGER;
-    let jMin = Number.MAX_SAFE_INTEGER;
-    let jMax = Number.MIN_SAFE_INTEGER;
-    let kMin = Number.MAX_SAFE_INTEGER;
-    let kMax = Number.MIN_SAFE_INTEGER;
-
-    for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j];
-
-      worldPosIndex[0] = Math.max(0, Math.min(dims[0] - 1, worldPosIndex[0]));
-      worldPosIndex[1] = Math.max(0, Math.min(dims[1] - 1, worldPosIndex[1]));
-      worldPosIndex[2] = Math.max(0, Math.min(dims[2] - 1, worldPosIndex[2]));
-
-      // For X and Y we compute the ROI bounds in the image grid. Using floor ensures
-      // the bounding box starts at the containing pixel index (top-left pixel in the
-      // image grid).
-      const xi = Math.floor(worldPosIndex[0] + EPSILON);
-      const yi = Math.floor(worldPosIndex[1] + EPSILON);
-
-      iMin = Math.min(iMin, xi);
-      iMax = Math.max(iMax, xi);
-
-      jMin = Math.min(jMin, yi);
-      jMax = Math.max(jMax, yi);
-
-      // Each slice represents a voxel slab with a finite thickness, and the voxel
-      // index corresponds to the center of that slab. When converting world
-      // coordinates back to index space, floating-point precision can produce
-      // slightly offset fractional indices. Rounding ensures the annotation
-      // maps to the nearest slice instead of unintentionally shifting to an adjacent
-      // slice.
-      const zi = Math.round(worldPosIndex[2] + EPSILON);
-
-      kMin = Math.min(kMin, zi);
-      kMax = Math.max(kMax, zi);
-    }
-
-    /**
-     * Calculates physical area from index-based area (Shoelace formula).
-     * We must use both 'scale' (X-direction) and 'scaleY' (Y-direction)
-     * because the pixel spacing may be anisotropic (scale != scaleY).
-     */
-    const area = polyline.getArea(indexPoints) / scale / scaleY;
+    // Convert from canvas_pixels ^2 to mm^2
+    const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
@@ -944,101 +921,116 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    // Expand bounding box
-    const iDelta = 0.01 * (iMax - iMin);
-    const jDelta = 0.01 * (jMax - jMin);
-    const kDelta = 0.01 * (kMax - kMin);
+    let pointsInShape = [];
+    const visited = new Set<string>();
 
-    iMin = Math.floor(iMin - iDelta);
-    iMax = Math.ceil(iMax + iDelta);
-    jMin = Math.floor(jMin - jDelta);
-    jMax = Math.ceil(jMax + jDelta);
-    kMin = Math.floor(kMin - kDelta);
-    kMax = Math.ceil(kMax + kDelta);
+    // Viewport-space ROI sampling for both orthogonal and oblique MPR views.
+    //
+    // Instead of iterating a 3D IJK bounding box, we rasterize the ROI in
+    // canvas space, project each canvas pixel back to world space, convert
+    // to IJK, and sample the corresponding voxel.
+    //
+    // This avoids the instability of voxel-driven scanline traversal in
+    // oblique views, where IJK iteration order no longer matches canvas
+    // row order, leading to missing voxels and invalid statistics.
+    //
+    // Complexity scales with projected ROI size rather than IJK volume,
+    // making it stable and efficient for all viewport orientations.
 
-    const boundsIJK = [
-      [iMin, iMax],
-      [jMin, jMax],
-      [kMin, kMax],
-    ] as [Types.Point2, Types.Point2, Types.Point2];
+    const {
+      maxX: canvasMaxX,
+      maxY: canvasMaxY,
+      minX: canvasMinX,
+      minY: canvasMinY,
+    } = math.polyline.getAABB(canvasCoordinates);
 
-    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
+    const startX = Math.floor(canvasMinX);
+    const endX = Math.ceil(canvasMaxX);
+    const startY = Math.floor(canvasMinY);
+    const endY = Math.ceil(canvasMaxY);
 
-    let curRow = 0;
-    let intersections = [];
-    let intersectionCounter = 0;
+    const dimensions = imageData.getDimensions();
+    const canvasMaxXPadded = endX + 1;
 
-    const { viewPlaneNormal } = viewport.getCamera();
-
-    /**
-     * Detect if the current viewport orientation is oblique.
-     * For oblique planes, the worldToCanvas transformation can produce
-     * slightly different floating-point Y values for points that belong
-     * to the same scanline due to floating-point precision and projection.
-     *
-     * This causes the scanline intersection logic to reset frequently,
-     * resulting in missing voxels and incorrect min/max/density statistics.
-     *
-     * To stabilize scanline detection, we introduce a tolerance (rowDelta)
-     * when comparing the current canvas Y coordinate with the previous row.
-     *
-     * - For orthogonal views, no tolerance is required (rowDelta = 0).
-     * - For oblique views, we allow a small half-pixel tolerance (0.5)
-     *   so that points with very small floating-point differences are
-     *   treated as belonging to the same scanline.
-     */
-    const TOLERANCE = 0.5;
-
-    const isOblique =
-      viewPlaneNormal.filter((c) => Math.abs(c) > EPSILON).length > 1;
-
-    const rowDelta = isOblique ? TOLERANCE : 0;
-
-    let pointsInShape;
-
-    if (voxelManager) {
-      pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          imageData,
-          isInObject: (pointLPS, _pointIJK) => {
-            const point = viewport.worldToCanvas(pointLPS);
-
-            // Use tolerance-based comparison to avoid scanline resets caused
-            // by floating-point precision differences in oblique projections.
-            if (Math.abs(point[1] - curRow) > rowDelta) {
-              intersectionCounter = 0;
-              curRow = point[1];
-              intersections = getLineSegmentIntersectionsCoordinates(
-                canvasCoordinates,
-                point,
-                [canvasPosEnd[0], point[1]]
-              );
-              intersections.sort(
-                (function (index) {
-                  return function (a, b) {
-                    return a[index] === b[index]
-                      ? 0
-                      : a[index] < b[index]
-                        ? -1
-                        : 1;
-                  };
-                })(0)
-              );
-            }
-            if (intersections.length && point[0] > intersections[0][0]) {
-              intersections.shift();
-              intersectionCounter++;
-            }
-
-            return intersectionCounter % 2 === 1;
-          },
-          boundsIJK,
-          returnPoints: this.configuration.storePointData,
-        }
+    for (let cy = startY; cy <= endY; cy++) {
+      // Compute all intersections of the polygon with this scanline row
+      const intersections = getLineSegmentIntersectionsCoordinates(
+        canvasCoordinates,
+        [startX - 1, cy] as Types.Point2,
+        [canvasMaxXPadded, cy] as Types.Point2
       );
+
+      if (!intersections || intersections.length === 0) {
+        continue;
+      }
+
+      // Sort intersections by X coordinate
+      intersections.sort((a, b) => a[0] - b[0]);
+
+      // Walk through intersection pairs (entry/exit)
+      for (let i = 0; i + 1 < intersections.length; i += 2) {
+        const xEnter = Math.ceil(intersections[i][0]);
+        const xExit = Math.floor(intersections[i + 1][0]);
+
+        for (let cx = xEnter; cx <= xExit; cx++) {
+          const canvasPoint: Types.Point2 = [cx, cy];
+          const worldPoint = viewport.canvasToWorld(canvasPoint);
+          const indexPoint = csUtils.transformWorldToIndex(
+            imageData,
+            worldPoint
+          );
+
+          // Nearest-neighbor: round to closest voxel
+          const ijkPoint: Types.Point3 = [
+            Math.round(indexPoint[0]),
+            Math.round(indexPoint[1]),
+            Math.round(indexPoint[2]),
+          ];
+
+          // Bounds check
+          if (
+            ijkPoint[0] < 0 ||
+            ijkPoint[0] >= dimensions[0] ||
+            ijkPoint[1] < 0 ||
+            ijkPoint[1] >= dimensions[1] ||
+            ijkPoint[2] < 0 ||
+            ijkPoint[2] >= dimensions[2]
+          ) {
+            continue;
+          }
+
+          const value = voxelManager.getAtIJKPoint(ijkPoint);
+
+          if (value === undefined || value === null) {
+            continue;
+          }
+
+          const key = `${ijkPoint[0]}_${ijkPoint[1]}_${ijkPoint[2]}`;
+
+          // avoid duplicate voxels
+          if (visited.has(key)) {
+            continue;
+          }
+
+          visited.add(key);
+
+          const sample = {
+            value: value as number,
+            pointLPS: worldPoint as Types.Point3,
+            pointIJK: ijkPoint,
+          };
+
+          pointsInShape.push(sample);
+
+          this.configuration.statsCalculator.statsCallback({
+            value: value as number,
+            pointLPS: worldPoint as Types.Point3,
+            pointIJK: ijkPoint,
+          });
+        }
+      }
     }
+
     const stats = this.configuration.statsCalculator.getStatistics();
 
     const namedArea: Statistics = {
