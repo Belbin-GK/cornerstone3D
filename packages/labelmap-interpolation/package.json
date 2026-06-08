@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "4.15.29-flywheel.14",
+  "version": "4.15.29-flywheel.15",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
