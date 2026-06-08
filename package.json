@@ -194,7 +194,6 @@
     "caniuse-lite": "1.0.30001734"
   },
   "resolutions": {
-    "axios": "1.15.0",
     "buffer": "6.0.3",
     "node-forge": "1.4.0",
     "canvas": "3.2.0",
