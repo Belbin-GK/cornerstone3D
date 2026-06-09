@@ -8,7 +8,7 @@ variables:
   SAST_EXCLUDED_PATHS: "packages/docs,tests,utils"
 
 default:
-  image: node:20
+  image: node:22
   cache:
     key:
       files:
