@@ -264,7 +264,7 @@ class LabelTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element, currentPoints } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

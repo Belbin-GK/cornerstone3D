@@ -274,7 +274,7 @@ class AngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -308,7 +308,7 @@ class AngleTool extends AnnotationTool {
     const { element } = eventDetail;
     const { data } = annotation;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     let movingTextBox = false;
     let handleIndex;

@@ -326,6 +326,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
+    annotation.highlighted = false;
+
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -348,6 +350,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

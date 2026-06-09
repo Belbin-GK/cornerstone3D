@@ -229,7 +229,7 @@ class ETDRSGridTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -260,7 +260,7 @@ class ETDRSGridTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(

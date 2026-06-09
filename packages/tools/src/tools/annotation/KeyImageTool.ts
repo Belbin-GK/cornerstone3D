@@ -178,7 +178,7 @@ class KeyImageTool extends AnnotationTool {
     evt: EventTypes.InteractionEventType,
     annotation: Annotation
   ): void => {
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     evt.preventDefault();
   };
@@ -190,7 +190,7 @@ class KeyImageTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

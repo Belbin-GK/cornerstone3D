@@ -139,7 +139,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
   public static createAnnotation(...annotationBaseData): Annotation {
     let annotation: Annotation = {
       annotationUID: null as string,
-      highlighted: true,
+      highlighted: false,
       invalidated: true,
       isLocked: false,
       isVisible: true,

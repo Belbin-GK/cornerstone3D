@@ -223,7 +223,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const { element } = eventDetail;
     const { data } = annotation;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
