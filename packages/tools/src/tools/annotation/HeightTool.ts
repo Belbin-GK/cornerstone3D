@@ -225,7 +225,7 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -258,7 +258,7 @@ class HeightTool extends AnnotationTool {
     const { element } = eventDetail;
     const { data } = annotation;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     let movingTextBox = false;
     let handleIndex;
@@ -338,8 +338,13 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox,newAnnotation } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
     this.createMemo(element, annotation, { newAnnotation });
     if (movingTextBox) {

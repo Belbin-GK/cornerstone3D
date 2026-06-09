@@ -336,7 +336,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -366,7 +366,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const { element } = eventDetail;
     const { data } = annotation;
 
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     const { points } = data.handles;
     const handleIndex = points.findIndex((p) => p === handle);

@@ -591,7 +591,7 @@ class CrosshairsTool extends AnnotationTool {
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    annotation.highlighted = true;
+    annotation.highlighted = false;
 
     // NOTE: handle index or coordinates are not used when dragging.
     // This because the handle points are actually generated in the renderTool and they are a derivative
@@ -636,7 +636,7 @@ class CrosshairsTool extends AnnotationTool {
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    annotation.highlighted = true;
+    annotation.highlighted = false;
     this._activateModify(element);
 
     hideElementCursor(element);
