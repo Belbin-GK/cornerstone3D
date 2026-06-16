@@ -1,7 +1,8 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import type { vtkCamera as cameraType } from '@kitware/vtk.js/Rendering/Core/Camera';
-import { getProjectionScaleIndices } from '../helpers/getProjectionScaleIndices';
+import { getProjectionScaleMatrix } from '../helpers/getProjectionScaleMatrix';
+import { getNormalizedAspectRatio } from '../../utilities/getNormalizedAspectRatio';
+import { mat4 } from 'gl-matrix';
 
 interface ICameraInitialValues {
   position?: number[];
@@ -25,22 +26,41 @@ interface ICameraInitialValues {
   physicalViewUp?: number[];
   physicalViewNorth?: number[];
   aspectRatio?: number[];
+  isFitViewportAfterStretch?: boolean;
 }
 
-export interface extendedVtkCamera extends cameraType {
-  /**
-   * Get the aspectRatio of the viewport
-   *  @defaultValue [1, 1]
-   */
-  getAspectRatio(): [x: number, y: number];
+declare module '@kitware/vtk.js/Rendering/Core/Camera' {
+  export interface vtkCamera {
+    /**
+     * Get the aspectRatio of the viewport
+     *  @defaultValue [1, 1]
+     */
+    getAspectRatio(): [x: number, y: number];
 
-  /**
-   * Set the aspectRatio of the viewport
-   * @param aspectRatio - aspectRatio of the viewport in x and y axis
-   */
-  setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+    /**
+     * Sets the viewport aspect ratio used for canvas-space stretching.
+     * The aspect ratio is applied along the canvas X and Y axes,
+     * independent of the image orientation.
+     *
+     * @param aspectRatio - [scaleX, scaleY] stretch factors applied along the canvas X and Y axes
+     */
+    setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+
+    /**
+     *  Returns whether fit to viewport after stretch or not
+     *  @defaultValue true
+     */
+    getIsFitViewportAfterStretch(): boolean;
+
+    /**
+     * Set whether fit to viewport after stretch or not
+     * @param isFitViewportAfterStretch - Whether fit to viewport after stretch or not
+     */
+    setIsFitViewportAfterStretch(isFitViewportAfterStretch: boolean): void;
+  }
 }
 
+export type extendedVtkCamera = vtkCamera;
 /**
  * extendedVtkCamera - A derived class of the core vtkCamera class
  *
@@ -62,14 +82,11 @@ function extendedVtkCamera(publicAPI, model) {
   publicAPI.getProjectionMatrix = (aspect, nearZ, farZ) => {
     const matrix = superGetProjectionMatrix(aspect, nearZ, farZ);
 
-    const [sx, sy] = model.aspectRatio;
+    const [sx, sy] = getNormalizedAspectRatio(model.aspectRatio);
 
     if (sx !== 1.0 || sy !== 1.0) {
-      const viewUp = publicAPI.getViewUp();
-      const viewPlaneNormal = publicAPI.getViewPlaneNormal();
-      const { idxX, idxY } = getProjectionScaleIndices(viewUp, viewPlaneNormal);
-      matrix[idxX] *= sx;
-      matrix[idxY] *= sy;
+      const scaleMatrix = getProjectionScaleMatrix([sx, sy]);
+      mat4.multiply(matrix, scaleMatrix, matrix);
     }
 
     return matrix;
@@ -81,6 +98,14 @@ function extendedVtkCamera(publicAPI, model) {
 
   publicAPI.setAspectRatio = (aspectRatio) => {
     model.aspectRatio = aspectRatio;
+  };
+
+  publicAPI.getIsFitViewportAfterStretch = () => {
+    return model.isFitViewportAfterStretch;
+  };
+
+  publicAPI.setIsFitViewportAfterStretch = (isFitViewportAfterStretch) => {
+    model.isFitViewportAfterStretch = isFitViewportAfterStretch;
   };
 }
 

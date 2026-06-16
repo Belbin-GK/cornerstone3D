@@ -12,7 +12,12 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
-const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
+const {
+  transformWorldToIndex,
+  transformIndexToWorld,
+  isEqual,
+  getNormalizedAspectRatio,
+} = csUtils;
 
 const VOXEL_CENTER_OFFSET = 0.5;
 
@@ -129,7 +134,10 @@ function createStrokePredicate(
         const dx = worldPoint[0] - start[0];
         const dy = worldPoint[1] - start[1];
         const dz = worldPoint[2] - start[2];
-        if ((dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared <= 1) {
+        if (
+          (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+          1
+        ) {
           return true;
         }
         continue;
@@ -195,7 +203,7 @@ const initializeCircle = {
     );
 
     // Get your aspect ratio values
-    const aspectRatio = viewport?.getAspectRatio?.() || [1, 1];
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
 
     const yRadius =
       points.length >= 2

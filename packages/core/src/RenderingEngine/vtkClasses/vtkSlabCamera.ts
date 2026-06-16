@@ -4,7 +4,8 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { vec3, mat4 } from 'gl-matrix';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { Range } from '@kitware/vtk.js/types';
-import { getProjectionScaleIndices } from '../helpers/getProjectionScaleIndices';
+import { getProjectionScaleMatrix } from '../helpers/getProjectionScaleMatrix';
+import { getNormalizedAspectRatio } from '../../utilities/getNormalizedAspectRatio';
 
 /**
  *
@@ -747,6 +748,29 @@ export interface vtkSlabCamera extends vtkObject {
   setIsPerformingCoordinateTransformation(status: boolean): void;
 
   computeCameraLightTransform(): void;
+  /**
+   * Get the aspectRatio of the viewport
+   *  @defaultValue [1, 1]
+   */
+  getAspectRatio(): [x: number, y: number];
+
+  /**
+   * Set the aspectRatio of the viewport
+   * @param aspectRatio - aspectRatio of the viewport in x and y axis
+   */
+  setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+
+  /**
+   *  Returns whether fit to viewport after stretch or not
+   *  @defaultValue true
+   */
+  getIsFitViewportAfterStretch(): boolean;
+
+  /**
+   * Set whether fit to viewport after stretch or not
+   * @param isFitViewportAfterStretch - Whether fit to viewport after stretch or not
+   */
+  setIsFitViewportAfterStretch(isFitViewportAfterStretch: boolean): void;
 }
 
 const DEFAULT_VALUES = {
@@ -910,14 +934,11 @@ function vtkSlabCamera(publicAPI, model) {
       tmpMatrix[15] = 0.0;
     }
 
-    const [sx, sy] = model.aspectRatio;
+    const [sx, sy] = getNormalizedAspectRatio(model.aspectRatio);
 
     if (sx !== 1.0 || sy !== 1.0) {
-      const viewUp = publicAPI.getViewUp();
-      const viewPlaneNormal = publicAPI.getViewPlaneNormal();
-      const { idxX, idxY } = getProjectionScaleIndices(viewUp, viewPlaneNormal);
-      tmpMatrix[idxX] *= sx;
-      tmpMatrix[idxY] *= sy;
+      const scaleMatrix = getProjectionScaleMatrix([sx, sy]);
+      mat4.multiply(tmpMatrix, scaleMatrix, tmpMatrix);
     }
 
     mat4.copy(result, tmpMatrix);
