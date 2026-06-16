@@ -1189,6 +1189,10 @@ class Viewport {
       -focalPointToSet[2]
     );
 
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatio();
+
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
       focalPoint: focalPointToSet,
@@ -1196,7 +1200,8 @@ class Viewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
-      aspectRatio: resetAspectRatio && [1, 1],
+      aspectRatio: targetAspectRatio,
+      isFitViewportAfterStretch: previousCamera.isFitViewportAfterStretch,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1388,26 +1393,59 @@ class Viewport {
    */
   public getAspectRatio(): Point2 {
     const { aspectRatio } = this.getCamera();
-    return aspectRatio;
+    return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
   }
 
   /**
-   * Sets the aspect ratio of the viewport using the provided 2D point `[widthRatio, heightRatio]`.
+   * Sets the aspect ratio of the viewport (canvas) using the provided 2D point
+   * `[widthRatio, heightRatio]`.
+   *
+   * This updates the VTK camera's **projection matrix** to apply axis-based
+   * stretching during rendering.
+   *
+   * As a result:
+   * - World-to-canvas mapping is updated via the camera projection.
+   * - Canvas-to-world mapping is also updated and remains consistent, as
+   * VTK utilizes the inverse of the same projection matrix for picking and
+   * coordinate transformations.
+   *
+   * Note:
+   * - The camera pose and orientation (position, focal point, and viewPlaneNormal)
+   * remain unchanged.
+   * - Image data, spacing, and world coordinates are not modified.
    *
    * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
    * @param storeAsInitialCamera - Whether to store the updated camera state as the initial camera.
    *                               Defaults to `false`.
    */
-  public setAspectRatio(value: Point2, storeAsInitialCamera = false): void {
+  public setAspectRatio(
+    value: Point2,
+    isFitViewportAfterStretch = true,
+    storeAsInitialCamera = false
+  ): void {
     const camera = this.getCamera();
+    if (storeAsInitialCamera) {
+      this.options.aspectRatio = value;
+    }
 
     this.setCamera(
       {
         ...camera,
         aspectRatio: value,
+        isFitViewportAfterStretch,
       },
       storeAsInitialCamera
     );
+  }
+
+  /**
+   * Returns whether to change aspect ratio in anamorphic or not
+   *
+   * @returns change aspect ratio in anamorphic or not
+   */
+  public getIsFitViewportAfterStretch(): boolean {
+    const { isFitViewportAfterStretch } = this.getCamera();
+    return isFitViewportAfterStretch ?? false;
   }
 
   /**
@@ -1508,6 +1546,7 @@ class Viewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+      isFitViewportAfterStretch: vtkCamera.getIsFitViewportAfterStretch(),
       aspectRatio: vtkCamera.getAspectRatio(),
     };
   }
@@ -1523,6 +1562,83 @@ class Viewport {
       ...camera,
       rotation: this.getRotation(),
     };
+  }
+
+  /**
+   * set the aspect ratio on VTK Camera
+   * @param aspectRatio - aspect ratio to set to VTKCamera
+   * @param isFitViewportAfterStretch - change aspect ratio in anamorphic
+   */
+  private setAspectRatioForVTKCamera(
+    aspectRatio: Point2,
+    isFitViewportAfterStretch: boolean = true
+  ): void {
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
+
+    if (!isFitViewportAfterStretch) {
+      vtkCamera.setAspectRatio(aspectRatio);
+      return;
+    }
+
+    const currentAspect = (vtkCamera.getAspectRatio() as Point2) || [1, 1];
+    if (
+      currentAspect[0] === aspectRatio[0] &&
+      currentAspect[1] === aspectRatio[1]
+    ) {
+      return;
+    }
+
+    const getRatioValue = ([x, y]: Point2) => x / y;
+    const oldRatioValue = getRatioValue(currentAspect);
+    const newRatioValue = getRatioValue(aspectRatio);
+
+    vtkCamera.setAspectRatio(aspectRatio);
+
+    const imageData = this.getDefaultImageData();
+    if (!imageData) return;
+
+    // Calculates the parallel scale required to fit the volume within the canvas for a given aspect ratio.
+    const getFitScale = (rVal: number): number => {
+      const { widthWorld, heightWorld } = getCubeSizeInView(
+        imageData,
+        vtkCamera.getViewPlaneNormal() as Point3,
+        vtkCamera.getViewUp() as Point3
+      );
+
+      const canvasAspectRatio = this.sWidth / this.sHeight;
+      const effectiveWidth = widthWorld * rVal;
+      const effectiveImageRatio = effectiveWidth / heightWorld;
+
+      // Determine scale based on whether the width or height is the limiting constraint (Letterboxing)
+      let fitScale =
+        effectiveImageRatio > canvasAspectRatio
+          ? effectiveWidth / (2 * canvasAspectRatio)
+          : heightWorld / 2;
+
+      // Adjust scale to prevent vertical compression when the aspect ratio favors the Y-axis
+      if (rVal < 1) fitScale /= rVal;
+
+      return fitScale;
+    };
+
+    // Apply the relative difference in fit scales to the current camera zoom (parallelScale)
+    const ratioFactor = getFitScale(newRatioValue) / getFitScale(oldRatioValue);
+    vtkCamera.setParallelScale(vtkCamera.getParallelScale() * ratioFactor);
+
+    // Keep baseline cameras synced to get the correct zoom after stretching.
+    // If not, the saved zoom value will drift from 1.0 even when the image fits the screen.
+    if (this.initialCamera?.parallelScale) {
+      this.initialCamera = {
+        ...this.initialCamera,
+        parallelScale: this.initialCamera.parallelScale * ratioFactor,
+      };
+    }
+    if (this.fitToCanvasCamera?.parallelScale) {
+      this.fitToCanvasCamera = {
+        ...this.fitToCanvasCamera,
+        parallelScale: this.fitToCanvasCamera.parallelScale * ratioFactor,
+      };
+    }
   }
 
   /**
@@ -1549,6 +1665,7 @@ class Viewport {
       flipVertical,
       clippingRange,
       aspectRatio,
+      isFitViewportAfterStretch,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1611,7 +1728,8 @@ class Viewport {
     }
 
     if (aspectRatio) {
-      vtkCamera.setAspectRatio(aspectRatio);
+      this.setAspectRatioForVTKCamera(aspectRatio, isFitViewportAfterStretch);
+      vtkCamera.setIsFitViewportAfterStretch(isFitViewportAfterStretch);
     }
 
     // update clipping range only if focal point changed of a new actor is added
@@ -2034,7 +2152,11 @@ class Viewport {
       const currentPan = this.getPan();
       const [aspectX, aspectY] = currentAspectRatio;
 
-      // Normalize pan to remove effect of zoom and stretch
+      // Normalize pan to remove the effects of zoom and projection-based stretching.
+      // Since axis-based stretching is applied via the camera projection matrix,
+      // pan values are captured in post-projection space. Dividing by both the
+      // zoom and aspect ratio ensures the pan state remains consistent across
+      // viewports, regardless of their specific zoom levels or stretching factors.
       const normalizedPanX = currentPan[0] / (initZoom * aspectX);
       const normalizedPanY = currentPan[1] / (initZoom * aspectY);
 
@@ -2079,11 +2201,11 @@ class Viewport {
       this.setDisplayArea(displayArea);
     }
     this.setZoom(zoom);
+    this.setAspectRatio(aspectRatio, this.getIsFitViewportAfterStretch());
     if (pan) {
-      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+      const [aspectX, aspectY] = aspectRatio;
+      this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);
     }
-
-    this.setAspectRatio(aspectRatio);
 
     // flip operation requires another re-render to take effect, so unfortunately
     // right now if the view presentation requires a flip, it will flicker. The

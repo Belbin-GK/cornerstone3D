@@ -39,7 +39,7 @@ import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
-import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
+import getCenterAndRadiusInCanvas from '../../utilities/getCenterAndRadiusInCanvas';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -240,8 +240,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
     const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
     const { data } = annotation;
 
-    // Center of circle in canvas Coordinates
-
+    // Convert center and current point to world coordinates
     const centerWorld = canvasToWorld(centerCanvas as Types.Point2);
     const currentWorld = canvasToWorld(currentCanvasPoints as Types.Point2);
 
