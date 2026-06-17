@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "4.15.29-flywheel.19",
+  "version": "4.15.29-flywheel.20",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
