@@ -220,6 +220,7 @@
     "**/readdirp/picomatch": "2.3.2",
     "protobufjs": "8.0.3",
     "xmlbuilder2": "4.0.0",
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "tmp": "0.2.7"
   }
 }
