@@ -11,6 +11,7 @@ ignore:
       /packages/docs/*: {}
       /packages/docs/**/*: {}
       /packages/*/examples/**/*: {}
+      /packages/*/karma.conf.js: {}
       /publish-version.mjs: {}
       /scripts/*: {}
       /scripts/**/*: {}
@@ -26,6 +27,7 @@ ignore:
       /packages/docs/*: {}
       /packages/docs/**/*: {}
       /packages/*/examples/**/*: {}
+      /packages/*/karma.conf.js: {}
       /publish-version.mjs: {}
       /scripts/*: {}
       /scripts/**/*: {}

@@ -1,3 +1,4 @@
 [tools]
 bun = "latest"
 node = "20"
+yarn = "1.22"

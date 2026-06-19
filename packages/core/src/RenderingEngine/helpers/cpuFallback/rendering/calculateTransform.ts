@@ -1,4 +1,5 @@
 import { Transform } from './transform';
+import { sanitizePixelSpacing } from './validator';
 import type {
   CPUFallbackEnabledElement,
   CPUFallbackTransform,
@@ -47,25 +48,29 @@ export default function (
     (enabledElement.viewport.displayedArea.tlhc.y - 1);
 
   if (enabledElement.viewport.displayedArea.presentationSizeMode === 'NONE') {
-    if (
-      enabledElement.image.rowPixelSpacing <
-      enabledElement.image.columnPixelSpacing
-    ) {
-      widthScale *=
-        enabledElement.image.columnPixelSpacing /
-        enabledElement.image.rowPixelSpacing;
-    } else if (
-      enabledElement.image.columnPixelSpacing <
+    const rowPixelSpacing = sanitizePixelSpacing(
       enabledElement.image.rowPixelSpacing
-    ) {
-      heightScale *=
-        enabledElement.image.rowPixelSpacing /
-        enabledElement.image.columnPixelSpacing;
+    );
+    const columnPixelSpacing = sanitizePixelSpacing(
+      enabledElement.image.columnPixelSpacing
+    );
+
+    if (rowPixelSpacing < columnPixelSpacing) {
+      widthScale *= columnPixelSpacing / rowPixelSpacing;
+    } else if (columnPixelSpacing < rowPixelSpacing) {
+      heightScale *= rowPixelSpacing / columnPixelSpacing;
     }
   } else {
+    const rowPixelSpacing = sanitizePixelSpacing(
+      enabledElement.viewport.displayedArea.rowPixelSpacing
+    );
+    const columnPixelSpacing = sanitizePixelSpacing(
+      enabledElement.viewport.displayedArea.columnPixelSpacing
+    );
+
     // These should be good for "TRUE SIZE" and "MAGNIFY"
-    widthScale = enabledElement.viewport.displayedArea.columnPixelSpacing;
-    heightScale = enabledElement.viewport.displayedArea.rowPixelSpacing;
+    widthScale = columnPixelSpacing;
+    heightScale = rowPixelSpacing;
 
     if (
       enabledElement.viewport.displayedArea.presentationSizeMode ===
@@ -80,20 +85,10 @@ export default function (
       // Apply new scale
       widthScale = heightScale = Math.min(horizontalScale, verticalScale);
 
-      if (
-        enabledElement.viewport.displayedArea.rowPixelSpacing <
-        enabledElement.viewport.displayedArea.columnPixelSpacing
-      ) {
-        widthScale *=
-          enabledElement.viewport.displayedArea.columnPixelSpacing /
-          enabledElement.viewport.displayedArea.rowPixelSpacing;
-      } else if (
-        enabledElement.viewport.displayedArea.columnPixelSpacing <
-        enabledElement.viewport.displayedArea.rowPixelSpacing
-      ) {
-        heightScale *=
-          enabledElement.viewport.displayedArea.rowPixelSpacing /
-          enabledElement.viewport.displayedArea.columnPixelSpacing;
+      if (rowPixelSpacing < columnPixelSpacing) {
+        widthScale *= columnPixelSpacing / rowPixelSpacing;
+      } else if (columnPixelSpacing < rowPixelSpacing) {
+        heightScale *= rowPixelSpacing / columnPixelSpacing;
       }
     }
   }

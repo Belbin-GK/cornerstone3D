@@ -4,6 +4,7 @@
 const { tmpdir } = require('os');
 const { join } = require('path');
 const path = require('path');
+const { randomInt } = require('crypto');
 
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
@@ -14,7 +15,7 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
  * https://github.com/ryanclark/karma-webpack/issues/498
  */
 const output = {
-  path: join(tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000),
+  path: join(tmpdir(), '_karma_webpack_') + randomInt(1000000),
 };
 
 /**
