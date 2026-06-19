@@ -43,6 +43,12 @@ type GrowCutOneClickOptions = GrowCutOptions & {
 const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to prevent excessive growth
 const MIN_NEGATIVE_SEEDS = 10; // Minimum number of negative seeds used to constrain region growth
 
+function secureRandomInt(min: number, max: number): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return min + (buf[0] % (max - min + 1));
+}
+
 /**
  * Calculates positive and negative seed indices for the GrowCut algorithm based on a single click.
  * Does not modify any labelmap volume.
@@ -248,9 +254,9 @@ function calculateGrowCutSeeds(
     attempts++;
 
     // Sample a *center* point for the potential patch
-    const rx = Math.floor(Math.random() * (maxXm - minXm + 1) + minXm);
-    const ry = Math.floor(Math.random() * (maxYm - minYm + 1) + minYm);
-    const rz = Math.floor(Math.random() * (maxZm - minZm + 1) + minZm);
+    const rx = secureRandomInt(minXm, maxXm);
+    const ry = secureRandomInt(minYm, maxYm);
+    const rz = secureRandomInt(minZm, maxZm);
 
     const centerIndex = rz * numPixelsPerSlice + ry * width + rx;
 

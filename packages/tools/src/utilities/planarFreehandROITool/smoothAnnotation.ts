@@ -39,7 +39,12 @@ function rotateMatrix(normal, focal) {
  * Rotate the array to prevent interpolation at endpoints causing non-smooth endpoints
  * Rotates the list in place.
  */
-function rotate(list, count = Math.floor(Math.random() * (list.length - 1))) {
+function rotate(list, count?: number) {
+  if (count === undefined) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    count = buf[0] % Math.max(list.length - 1, 1);
+  }
   if (count === 0) {
     return 0;
   }

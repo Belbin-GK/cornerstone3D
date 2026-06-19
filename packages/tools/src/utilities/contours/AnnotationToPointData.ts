@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
 import RectangleROIStartEndThreshold from './RectangleROIStartEndThreshold';
+import { getRandomRGBColor } from './getRandomRGBColor';
 
 function validateAnnotation(annotation) {
   if (!annotation?.data) {
@@ -54,11 +55,7 @@ class AnnotationToPointData {
     );
 
     // Todo: random rgb color for now, options should be passed in
-    const color = segment.color?.slice(0, 3) || [
-      Math.floor(Math.random() * 255),
-      Math.floor(Math.random() * 255),
-      Math.floor(Math.random() * 255),
-    ];
+    const color = segment.color?.slice(0, 3) || getRandomRGBColor();
 
     return {
       ReferencedROINumber: segment.segmentIndex,

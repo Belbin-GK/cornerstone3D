@@ -1,3 +1,19 @@
+import { isInvalidNumber } from '../../isInvalidNumber';
+
+const DEFAULT_PIXEL_SPACING = 1;
+
+/**
+ * Sanitizes pixel spacing from DICOM metadata for use in rendering logic.
+ * Returns a positive finite number, defaulting to 1 when invalid.
+ */
+export function sanitizePixelSpacing(value: number): number {
+  if (isInvalidNumber(value) || value <= 0) {
+    return DEFAULT_PIXEL_SPACING;
+  }
+
+  return value;
+}
+
 /**
  * Check if the supplied parameter is undefined and throws an error
  * @param {unknown} checkParam the parameter to validate for undefined

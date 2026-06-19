@@ -138,9 +138,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
     if (!model.jitterTexture.getHandle()) {
+      const jitterRaw = new Uint32Array(32 * 32);
+      crypto.getRandomValues(jitterRaw);
       const jitterArray = new Float32Array(32 * 32);
       for (let i = 0; i < 32 * 32; ++i) {
-        jitterArray[i] = Math.random();
+        jitterArray[i] = jitterRaw[i] / 0x100000000;
       }
       model.jitterTexture.setMinificationFilter(Filter.NEAREST);
       model.jitterTexture.setMagnificationFilter(Filter.NEAREST);
