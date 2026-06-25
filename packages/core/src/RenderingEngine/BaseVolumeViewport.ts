@@ -1,7 +1,6 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
@@ -50,8 +49,8 @@ import {
   findMatchingColormap,
   updateOpacity as colormapUpdateOpacity,
   updateThreshold as colormapUpdateThreshold,
-  getThresholdValue,
-  getMaxOpacity,
+  updateOpacityMapping as colormapUpdateOpacityMapping,
+  getOpacityState,
 } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
@@ -312,6 +311,13 @@ abstract class BaseVolumeViewport extends Viewport {
     // colormap for Volume A if Volume B's colormap was the last one applied.
     this.viewportProperties.colormap = colormap;
 
+    // Seed the opacity spec from the incoming colormap (if it carries opacity/mapping) BEFORE the
+    // events below fire. setColormap emits VOI_MODIFIED/COLORMAP_MODIFIED ahead of setProperties'
+    // separate setOpacity call, so without this getColormap would report a flattened fallback and
+    // any synchronizer listening to those events would propagate a flattened opacity to the other
+    // viewports — re-introducing the TMTV fusion red background.
+    this._applyColormapOpacity(colormap, volumeActor);
+
     if (!suppressEvents) {
       const completeColormap = this.getColormap(volumeId);
 
@@ -322,6 +328,32 @@ abstract class BaseVolumeViewport extends Viewport {
       };
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+    }
+  }
+
+  /**
+   * Applies the opacity carried by a public colormap to the volume actor. Opacity has two
+   * orthogonal parts that must not overwrite each other:
+   *  - a scalar "overall" level (e.g. the fusion/master slider), and
+   *  - a per-value mapping (e.g. a hanging-protocol opacity array).
+   * For backward compatibility an array passed in `opacity` is treated as the mapping. The
+   * rendered function is overall * mapping(v), derived from a per-actor spec so a later slider or
+   * threshold change re-derives instead of flattening (see utilities/colormap). If the colormap
+   * carries neither, the existing spec is left untouched (e.g. a pure LUT-name change).
+   */
+  private _applyColormapOpacity(colormap: ColormapPublic, volumeActor): void {
+    const mapping = Array.isArray(colormap.opacityMapping)
+      ? colormap.opacityMapping
+      : Array.isArray(colormap.opacity)
+        ? colormap.opacity
+        : undefined;
+    const overall =
+      typeof colormap.opacity === 'number' ? colormap.opacity : undefined;
+
+    if (mapping !== undefined) {
+      colormapUpdateOpacityMapping(volumeActor, mapping, overall);
+    } else if (overall !== undefined) {
+      colormapUpdateOpacity(volumeActor, overall);
     }
   }
 
@@ -340,22 +372,16 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const ofun = vtkPiecewiseFunction.newInstance();
-    if (typeof colormap.opacity === 'number') {
-      // Use the new utility to update opacity while preserving threshold
-      colormapUpdateOpacity(volumeActor, colormap.opacity);
-    } else {
-      colormap.opacity.forEach(({ opacity, value }) => {
-        ofun.addPoint(value, opacity);
-      });
-      volumeActor.getProperty().setScalarOpacity(0, ofun);
-    }
+    this._applyColormapOpacity(colormap, volumeActor);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
     }
 
-    this.viewportProperties.colormap.opacity = colormap.opacity;
+    // Mirror the resolved state (scalar opacity + per-value mapping) into the stored colormap.
+    const { opacity, opacityMapping } = getOpacityState(volumeActor);
+    this.viewportProperties.colormap.opacity = opacity;
+    this.viewportProperties.colormap.opacityMapping = opacityMapping;
 
     const matchedColormap = this.getColormap(volumeId);
     const eventDetail = {
@@ -1048,7 +1074,7 @@ abstract class BaseVolumeViewport extends Viewport {
     if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
-    if (colormap?.opacity != null) {
+    if (colormap?.opacity != null || colormap?.opacityMapping != null) {
       this.setOpacity(colormap, volumeId);
     }
     if (colormap?.threshold != null) {
@@ -1344,34 +1370,12 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor) || {};
 
-    // getColormap used to always read opacity and threshold from the VTK actor. That overwrote
-    // values that came from the hanging protocol. When the protocol sends opacity as an array
-    // (e.g. [{value: 0, opacity: 0}, ...]), it was replaced by a single number from the actor,
-    // and TMTV and similar flows broke. The threshold slider (added in v3.11/3.12) needs the
-    // current value from the actor when the user moves the slider. So we branch: if the stored
-    // value is a number (slider case), read from the actor; otherwise use the stored value so
-    // hanging protocol arrays and explicit null are preserved.
-    const storedColormap = this.viewportProperties.colormap;
-
-    if (
-      storedColormap?.opacity !== undefined &&
-      typeof storedColormap.opacity === 'number'
-    ) {
-      matchedColormap.opacity = getMaxOpacity(volumeActor);
-    } else if (storedColormap?.opacity !== undefined) {
-      matchedColormap.opacity = Array.isArray(storedColormap.opacity)
-        ? storedColormap.opacity.map((item) => ({ ...item }))
-        : storedColormap.opacity;
-    }
-
-    if (
-      storedColormap?.threshold !== undefined &&
-      typeof storedColormap.threshold === 'number'
-    ) {
-      matchedColormap.threshold = getThresholdValue(volumeActor);
-    } else if (storedColormap && 'threshold' in storedColormap) {
-      matchedColormap.threshold = storedColormap.threshold;
-    }
+    // Report the scalar overall opacity (as a number, for the slider) alongside the per-value
+    // mapping, so both can be read back and synchronized without one collapsing the other.
+    const { opacity, opacityMapping, threshold } = getOpacityState(volumeActor);
+    matchedColormap.opacity = opacity;
+    matchedColormap.opacityMapping = opacityMapping;
+    matchedColormap.threshold = threshold;
 
     return matchedColormap;
   };
