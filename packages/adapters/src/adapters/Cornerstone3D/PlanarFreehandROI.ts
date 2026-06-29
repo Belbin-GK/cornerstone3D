@@ -2,7 +2,7 @@ import MeasurementReport from './MeasurementReport';
 import { utilities } from 'dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoords, validateNumericValue } from '../helpers';
+import { toScoords, getValidatedNumericValue } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
@@ -121,13 +121,13 @@ class PlanarFreehandROI extends BaseAdapter3D {
     return {
       /** From cachedStats */
       points,
-      area: validateNumericValue(area),
+      area: getValidatedNumericValue(area),
       areaUnit,
-      perimeter: validateNumericValue(perimeter ?? length),
+      perimeter: getValidatedNumericValue(perimeter ?? length),
       modalityUnit,
-      mean: validateNumericValue(mean),
-      max: validateNumericValue(max),
-      stdDev: validateNumericValue(stdDev),
+      mean: getValidatedNumericValue(mean),
+      max: getValidatedNumericValue(max),
+      stdDev: getValidatedNumericValue(stdDev),
       /** Other */
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,

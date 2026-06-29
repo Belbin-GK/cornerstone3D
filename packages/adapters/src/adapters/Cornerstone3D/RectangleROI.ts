@@ -1,6 +1,6 @@
 import { utilities } from 'dcmjs';
 
-import { toScoords, validateNumericValue } from '../helpers';
+import { toScoords, getValidatedNumericValue } from '../helpers';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
@@ -107,11 +107,11 @@ export class RectangleROI extends BaseAdapter3D {
 
     return {
       points: [corners[0], corners[1], corners[3], corners[2], corners[0]],
-      area: validateNumericValue(area),
-      perimeter: validateNumericValue(perimeter),
-      max: validateNumericValue(max),
-      mean: validateNumericValue(mean),
-      stdDev: validateNumericValue(stdDev),
+      area: getValidatedNumericValue(area),
+      perimeter: getValidatedNumericValue(perimeter),
+      max: getValidatedNumericValue(max),
+      mean: getValidatedNumericValue(mean),
+      stdDev: getValidatedNumericValue(stdDev),
       areaUnit,
       modalityUnit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,

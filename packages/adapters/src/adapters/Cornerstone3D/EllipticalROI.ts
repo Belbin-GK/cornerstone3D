@@ -3,7 +3,7 @@ import { utilities } from 'dcmjs';
 
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoord, validateNumericValue } from '../helpers';
+import { toScoord, getValidatedNumericValue } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
@@ -175,12 +175,12 @@ class EllipticalROI extends BaseAdapter3D {
     const convertedPoints = points.map((point) => toScoord(scoordProps, point));
 
     return {
-      area: validateNumericValue(area),
+      area: getValidatedNumericValue(area),
       areaUnit,
-      max: validateNumericValue(max),
-      min: validateNumericValue(min),
-      mean: validateNumericValue(mean),
-      stdDev: validateNumericValue(stdDev),
+      max: getValidatedNumericValue(max),
+      min: getValidatedNumericValue(min),
+      mean: getValidatedNumericValue(mean),
+      stdDev: getValidatedNumericValue(stdDev),
       modalityUnit,
       points: convertedPoints,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,

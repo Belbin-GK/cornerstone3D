@@ -4,7 +4,7 @@ import {
   scoordToWorld,
   toScoord,
   toArray,
-  validateNumericValue,
+  getValidatedNumericValue,
 } from '../helpers';
 import BaseAdapter3D from './BaseAdapter3D';
 
@@ -148,8 +148,8 @@ class Bidirectional extends BaseAdapter3D {
         point1: shortAxisStartImage,
         point2: shortAxisEndImage,
       },
-      longAxisLength: validateNumericValue(length),
-      shortAxisLength: validateNumericValue(width),
+      longAxisLength: getValidatedNumericValue(length),
+      shortAxisLength: getValidatedNumericValue(width),
       unit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding: finding,
