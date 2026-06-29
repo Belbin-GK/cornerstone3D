@@ -1,7 +1,7 @@
 import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoord, validateNumericValue } from '../helpers';
+import { toScoord, getValidatedNumericValue } from '../helpers';
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -82,7 +82,7 @@ export default class Length extends BaseAdapter3D {
     return {
       point1,
       point2,
-      distance: validateNumericValue(distance),
+      distance: getValidatedNumericValue(distance),
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,
       findingSites: findingSites || [],

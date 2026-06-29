@@ -2,7 +2,7 @@ import { toArray } from './toArray';
 import { codeMeaningEquals } from './codeMeaningEquals';
 import { graphicTypeEquals } from './graphicTypeEquals';
 import { downloadDICOMData } from './downloadDICOMData';
-import { validateNumericValue } from './validateNumericValue';
+import { getValidatedNumericValue } from './getValidatedNumericValue';
 
 export { copyStudyTags } from './copyStudyTags';
 export { copySeriesTags } from './copySeriesTags';
@@ -16,5 +16,5 @@ export {
   codeMeaningEquals,
   graphicTypeEquals,
   downloadDICOMData,
-  validateNumericValue,
+  getValidatedNumericValue,
 };
