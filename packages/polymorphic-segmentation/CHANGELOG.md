@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.29-flywheel.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.28...v4.15.29-flywheel.29) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
 ## [4.15.29-flywheel.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.27...v4.15.29-flywheel.28) (2026-06-29)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
