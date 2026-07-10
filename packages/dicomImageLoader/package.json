@@ -111,7 +111,7 @@
     "pako": "2.1.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.15.29-flywheel.30",
+    "@cornerstonejs/core": "^4.15.29-flywheel.31",
     "dicom-parser": "1.8.21"
   },
   "config": {
