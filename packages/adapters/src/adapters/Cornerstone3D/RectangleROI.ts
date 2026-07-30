@@ -97,13 +97,7 @@ export class RectangleROI extends BaseAdapter3D {
     const corners = toScoords(scoordProps, data.handles.points);
 
     const { area, perimeter, max, mean, stdDev, areaUnit, modalityUnit } =
-      data.cachedStats[`imageId:${referencedImageId}`] ||
-      data.cachedStats[
-        Object.keys(data.cachedStats).find((k) =>
-          k.startsWith(`volumeId:${volumeId}`)
-        )
-      ] ||
-      {};
+      super.getCachedStats(data.cachedStats, metadata);
 
     return {
       points: [corners[0], corners[1], corners[3], corners[2], corners[0]],

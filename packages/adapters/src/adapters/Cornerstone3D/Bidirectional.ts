@@ -130,14 +130,7 @@ class Bidirectional extends BaseAdapter3D {
     const shortAxisStartImage = toScoord(scoordProps, longAxisPoints[0]);
     const shortAxisEndImage = toScoord(scoordProps, longAxisPoints[1]);
 
-    const { length, width, unit } =
-      cachedStats[`imageId:${referencedImageId}`] ||
-      cachedStats[
-        Object.keys(cachedStats).find((k) =>
-          k.startsWith(`volumeId:${volumeId}`)
-        )
-      ] ||
-      {};
+    const { length, width, unit } = super.getCachedStats(cachedStats, metadata);
 
     return {
       longAxis: {

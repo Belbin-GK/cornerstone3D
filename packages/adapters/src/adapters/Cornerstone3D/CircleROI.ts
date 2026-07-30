@@ -89,14 +89,7 @@ class CircleROI extends BaseAdapter3D {
       modalityUnit,
       radiusUnit,
       areaUnit,
-    } =
-      cachedStats[`imageId:${referencedImageId}`] ||
-      cachedStats[
-        Object.keys(cachedStats).find((k) =>
-          k.startsWith(`volumeId:${volumeId}`)
-        )
-      ] ||
-      {};
+    } = super.getCachedStats(cachedStats, metadata);
     const perimeter = 2 * Math.PI * radius;
 
     return {
