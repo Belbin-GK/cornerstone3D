@@ -70,14 +70,7 @@ export default class Length extends BaseAdapter3D {
     const point1 = toScoord(scoordProps, handles.points[0]);
     const point2 = toScoord(scoordProps, handles.points[1]);
 
-    const { length: distance } =
-      cachedStats[`imageId:${referencedImageId}`] ||
-      cachedStats[
-        Object.keys(cachedStats).find((k) =>
-          k.startsWith(`volumeId:${volumeId}`)
-        )
-      ] ||
-      {};
+    const { length: distance } = super.getCachedStats(cachedStats, metadata);
 
     return {
       point1,

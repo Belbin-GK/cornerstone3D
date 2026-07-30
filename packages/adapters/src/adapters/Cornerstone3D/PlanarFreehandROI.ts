@@ -109,14 +109,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
       max,
       stdDev,
       length,
-    } =
-      data.cachedStats[`imageId:${referencedImageId}`] ||
-      data.cachedStats[
-        Object.keys(data.cachedStats).find((k) =>
-          k.startsWith(`volumeId:${volumeId}`)
-        )
-      ] ||
-      {};
+    } = super.getCachedStats(data.cachedStats, metadata);
 
     return {
       /** From cachedStats */
