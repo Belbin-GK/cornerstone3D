@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.29-flywheel.32](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.31...v4.15.29-flywheel.32) (2026-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
 ## [4.15.29-flywheel.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29-flywheel.30...v4.15.29-flywheel.31) (2026-07-10)
 
 **Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
