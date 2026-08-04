@@ -55,7 +55,8 @@ const extractInfoFromPerFrameFunctionalGroups = ({
     const referencedSOPInstanceUid =
         PerFrameFunctionalGroups.DerivationImageSequence[0]
             .SourceImageSequence[0].ReferencedSOPInstanceUID;
-    const referencedImageId = sopUIDImageIdIndexMap[referencedSOPInstanceUid];
+    const imageIds = sopUIDImageIdIndexMap[referencedSOPInstanceUid];
+    const referencedImageId = imageIds[sequenceIndex];
     const segmentIndex = getSegmentIndex(multiframe, sequenceIndex);
 
     return { referencedSOPInstanceUid, referencedImageId, segmentIndex };
@@ -163,7 +164,10 @@ async function createLabelmapsFromBufferInternal(
       );
       const existingImageId = acc[sopInstanceUID];
       if (existingImageId === undefined) {
-        acc[sopInstanceUID] = imageId;
+        // If DerivationImageSequence is missing from the PerFrameFunctionalGroupsSequence in
+        //current data (eg: segmentation generated from 3d slicer app)
+        // multiple frames may map to the same SOP Instance UID in multi frame data.
+        acc[sopInstanceUID] = [imageId];
       } else if (Array.isArray(existingImageId)) {
         existingImageId.push(imageId);
       } else {
