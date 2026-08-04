@@ -206,7 +206,7 @@
     "handlebars": "4.7.9",
     "flatted": "3.4.2",
     "socket.io-parser": "^4.2.6",
-    "**/@itk-wasm/dam/tar": "7.5.11",
+    "tar": "^7.5.22",
     "**/express/path-to-regexp": "0.1.13",
     "karma-webpack/minimatch": "9.0.7",
     "**/karma/minimatch": "3.1.4",
