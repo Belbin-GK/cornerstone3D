@@ -89,7 +89,7 @@
     "ndarray": "1.0.19"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.15.29-flywheel.37",
-    "@cornerstonejs/tools": "^4.15.29-flywheel.37"
+    "@cornerstonejs/core": "^4.15.29-flywheel.38",
+    "@cornerstonejs/tools": "^4.15.29-flywheel.38"
   }
 }
