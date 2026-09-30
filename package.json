@@ -216,15 +216,18 @@
     "**/micromatch/picomatch": "2.3.2",
     "**/jest-util/picomatch": "2.3.2",
     "**/readdirp/picomatch": "2.3.2",
-    "**/lerna/js-yaml": "4.3.1",
+    "**/lerna/js-yaml": "4.3.2",
     "**/nx/brace-expansion": "^5.0.8",
-    "protobufjs": "8.6.0",
+    "protobufjs": "8.6.6",
     "xmlbuilder2": "4.0.0",
     "serialize-javascript": "7.0.5",
     "tmp": "0.2.7",
     "postcss": "^8.5.26",
     "ws": "8.21.2",
     "uuid": "^11.1.1",
-    "adm-zip": "0.6.0"
+    "adm-zip": "0.6.1",
+    "svgo": "4.1.0",
+    "pacote": "21.5.1",
+    "smol-toml": "1.8.0"
   }
 }
