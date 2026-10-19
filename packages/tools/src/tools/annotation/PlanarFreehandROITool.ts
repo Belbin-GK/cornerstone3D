@@ -42,7 +42,10 @@ import type {
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
+import {
+  projectPointTo2D,
+  projectTo2D,
+} from '../../utilities/math/polyline/projectTo2D';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
@@ -925,113 +928,132 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    let pointsInShape = [];
-    const visited = new Set<string>();
-
-    // Viewport-space ROI sampling for both orthogonal and oblique MPR views.
-    //
-    // Instead of iterating a 3D IJK bounding box, we rasterize the ROI in
-    // canvas space, project each canvas pixel back to world space, convert
-    // to IJK, and sample the corresponding voxel.
-    //
-    // This avoids the instability of voxel-driven scanline traversal in
-    // oblique views, where IJK iteration order no longer matches canvas
-    // row order, leading to missing voxels and invalid statistics.
-    //
-    // Complexity scales with projected ROI size rather than IJK volume,
-    // making it stable and efficient for all viewport orientations.
-
-    const {
-      maxX: canvasMaxX,
-      maxY: canvasMaxY,
-      minX: canvasMinX,
-      minY: canvasMinY,
-    } = math.polyline.getAABB(canvasCoordinates);
-
-    const startX = Math.floor(canvasMinX);
-    const endX = Math.ceil(canvasMaxX);
-    const startY = Math.floor(canvasMinY);
-    const endY = Math.ceil(canvasMaxY);
-
+    // Image-pixel sampling : visit each voxel in the contour's index bounds and
+    // keep it when its centre lies on the annotation's plane
+    // (within half a voxel along the view normal) and, projected onto that plane,
+    // inside the contour. Unlike sampling canvas pixels, this does not depend on zoom
+    // pan or viewport size, so stack and MPR layouts report the same
+    // statistics, including oblique views.
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    const normal = vec3.normalize(vec3.create(), viewPlaneNormal);
     const dimensions = imageData.getDimensions();
-    const canvasMaxXPadded = endX + 1;
+    const spacing = imageData.getSpacing();
+    const direction = imageData.getDirection();
 
-    for (let cy = startY; cy <= endY; cy++) {
-      // Compute all intersections of the polygon with this scanline row
-      const intersections = getLineSegmentIntersectionsCoordinates(
-        canvasCoordinates,
-        [startX - 1, cy] as Types.Point2,
-        [canvasMaxXPadded, cy] as Types.Point2
+    // Half the voxel extent along the normal. A single image (stack) has one
+    // layer, so every voxel in it is on the plane.
+    const inverseThickness = Math.sqrt(
+      [0, 1, 2].reduce((sum, axis) => {
+        const along =
+          (direction[axis * 3] * normal[0] +
+            direction[axis * 3 + 1] * normal[1] +
+            direction[axis * 3 + 2] * normal[2]) /
+          spacing[axis];
+        return sum + along * along;
+      }, 0)
+    );
+    const halfThickness =
+      dimensions[2] === 1 ? Infinity : 0.5 / inverseThickness + EPSILON;
+
+    const planePoint = points[0];
+    const projection = projectTo2D(points, viewPlaneNormal, viewUp);
+
+    // Index-space bounds of the contour, one voxel wider on every side.
+    const boundsIJK = [0, 1, 2].map((axis) => {
+      const values = indexPoints.map((point) => point[axis]);
+      return [
+        Math.max(0, Math.floor(Math.min(...values)) - 1),
+        Math.min(dimensions[axis] - 1, Math.ceil(Math.max(...values)) + 1),
+      ];
+    }) as Types.BoundsIJK;
+
+    // The contour is projected onto the plane once; each voxel centre is then
+    // projected and tested against it. The edges are bucketed into bands (see
+    // createPointInPolygonTest), so a voxel checks only nearby edges rather
+    // than every point of the contour.
+    const { sharedDimensionIndex, origin, right, up } = projection;
+    const isInsideContour = createPointInPolygonTest(
+      projection.projectedPolyline
+    );
+
+    const isInObject = (pointLPS: Types.Point3) => {
+      const depth =
+        (pointLPS[0] - planePoint[0]) * normal[0] +
+        (pointLPS[1] - planePoint[1]) * normal[1] +
+        (pointLPS[2] - planePoint[2]) * normal[2];
+
+      if (Math.abs(depth) > halfThickness) {
+        return false;
+      }
+
+      const [x, y] = projectPointTo2D(
+        pointLPS,
+        sharedDimensionIndex,
+        origin,
+        right,
+        up
       );
+      return isInsideContour(x, y);
+    };
 
-      if (!intersections || intersections.length === 0) {
+    // On a tilted plane the contour's index box spans many slices, but in
+    // each slice only a narrow band of rows lies near the plane. Visit each
+    // slice with just that band, so voxels far from the plane are skipped.
+    const depthSteps = [0, 1, 2].map(
+      (axis) =>
+        (direction[axis * 3] * normal[0] +
+          direction[axis * 3 + 1] * normal[1] +
+          direction[axis * 3 + 2] * normal[2]) *
+        spacing[axis]
+    );
+    const depthAtOrigin = vec3.dot(
+      vec3.sub(vec3.create(), imageData.indexToWorld([0, 0, 0]), planePoint),
+      normal
+    );
+    const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK;
+    const iDepthLow = Math.min(iMin * depthSteps[0], iMax * depthSteps[0]);
+    const iDepthHigh = Math.max(iMin * depthSteps[0], iMax * depthSteps[0]);
+
+    const pointsInShape = [];
+
+    for (let k = kMin; k <= kMax; k++) {
+      const sliceDepth = depthAtOrigin + k * depthSteps[2];
+      const upper = halfThickness - sliceDepth - iDepthLow;
+      const lower = -halfThickness - sliceDepth - iDepthHigh;
+      let jStart = jMin;
+      let jEnd = jMax;
+
+      if (Math.abs(depthSteps[1]) < 1e-12) {
+        if (upper < 0 || lower > 0) {
+          continue;
+        }
+      } else {
+        const a = upper / depthSteps[1];
+        const b = lower / depthSteps[1];
+        jStart = Math.max(jMin, Math.floor(Math.min(a, b)));
+        jEnd = Math.min(jMax, Math.ceil(Math.max(a, b)));
+      }
+
+      if (jStart > jEnd) {
         continue;
       }
 
-      // Sort intersections by X coordinate
-      intersections.sort((a, b) => a[0] - b[0]);
-
-      // Walk through intersection pairs (entry/exit)
-      for (let i = 0; i + 1 < intersections.length; i += 2) {
-        const xEnter = Math.ceil(intersections[i][0]);
-        const xExit = Math.floor(intersections[i + 1][0]);
-
-        for (let cx = xEnter; cx <= xExit; cx++) {
-          const canvasPoint: Types.Point2 = [cx, cy];
-          const worldPoint = viewport.canvasToWorld(canvasPoint);
-          const indexPoint = csUtils.transformWorldToIndex(
-            imageData,
-            worldPoint
-          );
-
-          // Nearest-neighbor: round to closest voxel
-          const ijkPoint: Types.Point3 = [
-            Math.round(indexPoint[0]),
-            Math.round(indexPoint[1]),
-            Math.round(indexPoint[2]),
-          ];
-
-          // Bounds check
-          if (
-            ijkPoint[0] < 0 ||
-            ijkPoint[0] >= dimensions[0] ||
-            ijkPoint[1] < 0 ||
-            ijkPoint[1] >= dimensions[1] ||
-            ijkPoint[2] < 0 ||
-            ijkPoint[2] >= dimensions[2]
-          ) {
-            continue;
-          }
-
-          const value = voxelManager.getAtIJKPoint(ijkPoint);
-
-          if (value === undefined || value === null) {
-            continue;
-          }
-
-          const key = `${ijkPoint[0]}_${ijkPoint[1]}_${ijkPoint[2]}`;
-
-          // avoid duplicate voxels
-          if (visited.has(key)) {
-            continue;
-          }
-
-          visited.add(key);
-
-          const sample = {
-            value: value as number,
-            pointLPS: worldPoint as Types.Point3,
-            pointIJK: ijkPoint,
-          };
-
-          pointsInShape.push(sample);
-
-          this.configuration.statsCalculator.statsCallback({
-            value: value as number,
-            pointLPS: worldPoint as Types.Point3,
-            pointIJK: ijkPoint,
-          });
+      const slicePoints = voxelManager.forEach(
+        this.configuration.statsCalculator.statsCallback,
+        {
+          imageData,
+          boundsIJK: [
+            [iMin, iMax],
+            [jStart, jEnd],
+            [k, k],
+          ],
+          returnPoints: this.configuration.storePointData,
+          isInObject,
         }
+      );
+
+      if (slicePoints?.length) {
+        pointsInShape.push(...slicePoints);
       }
     }
 
@@ -1215,6 +1237,55 @@ function defaultGetTextLines(data, targetId): string[] {
   }
 
   return textLines;
+}
+
+/**
+ * Builds a point-in-polygon test (ray casting) for a closed polygon in its own
+ * 2D coordinates. The edges are bucketed into horizontal bands, so each query
+ * checks only the edges that overlap its row instead of the whole polygon,
+ * which keeps the cost per voxel low for contours with many points.
+ */
+function createPointInPolygonTest(
+  polygon: Types.Point2[]
+): (x: number, y: number) => boolean {
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const [, y] of polygon) {
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+
+  const bandCount = Math.max(1, polygon.length);
+  const bandHeight = (maxY - minY) / bandCount || 1;
+  const bandOf = (y: number) =>
+    Math.min(bandCount - 1, Math.max(0, Math.floor((y - minY) / bandHeight)));
+  const bands: number[][] = Array.from({ length: bandCount }, () => []);
+  const next = (a: number) => (a === polygon.length - 1 ? 0 : a + 1);
+
+  for (let point = 0; point < polygon.length; point++) {
+    const ya = polygon[point][1];
+    const yb = polygon[next(point)][1];
+    const last = bandOf(Math.max(ya, yb));
+    for (let band = bandOf(Math.min(ya, yb)); band <= last; band++) {
+      bands[band].push(point);
+    }
+  }
+
+  return (x, y) => {
+    if (y < minY || y > maxY) {
+      return false;
+    }
+
+    let inside = false;
+    for (const band of bands[bandOf(y)]) {
+      const [xa, ya] = polygon[band];
+      const [xb, yb] = polygon[next(band)];
+      if (ya > y !== yb > y && x < ((xb - xa) * (y - ya)) / (yb - ya) + xa) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
 }
 
 export default PlanarFreehandROITool;
