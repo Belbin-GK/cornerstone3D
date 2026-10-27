@@ -61,7 +61,7 @@
     "onnxruntime-web": "1.17.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.15.29-flywheel.40",
-    "@cornerstonejs/tools": "^4.15.29-flywheel.40"
+    "@cornerstonejs/core": "^4.15.29-flywheel.41",
+    "@cornerstonejs/tools": "^4.15.29-flywheel.41"
   }
 }
