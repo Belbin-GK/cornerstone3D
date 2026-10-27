@@ -47,7 +47,6 @@ async function publishLerna(branchName: string) {
 async function publishBun(branchName: string) {
   const baseBunArgs = [
     'publish',
-    '--no-git-checks',
     '--registry',
     REGISTRY_URL,
   ]
