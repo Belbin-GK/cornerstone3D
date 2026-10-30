@@ -21,6 +21,11 @@ import { getSegmentationRepresentation } from '../../stateManagement/segmentatio
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { isSegmentIndexLocked } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.LabelmapEditWithContour'
+);
 
 /**
  * LabelMapEditWithContourTool provides an intuitive way to edit labelmap segmentations
@@ -218,7 +223,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     activeSeg: Segmentation
   ) {
     if (!activeSeg) {
-      console.log('No active segmentation detected');
+      cs3dLogger.info('No active segmentation detected');
       return false;
     }
 

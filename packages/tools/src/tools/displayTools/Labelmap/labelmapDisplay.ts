@@ -33,6 +33,11 @@ import { computeAndAddRepresentation } from '../../../utilities/segmentation/com
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Labelmap.labelmapDisplay'
+);
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -94,7 +99,10 @@ async function render(
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
-    console.warn('No segmentation found for segmentationId: ', segmentationId);
+    cs3dLogger.warn(
+      'No segmentation found for segmentationId: ',
+      segmentationId
+    );
     return;
   }
 
@@ -148,7 +156,7 @@ async function render(
 
     polySegConversionInProgress = false;
   } else if (!labelmapData && !getPolySeg()) {
-    console.debug(
+    cs3dLogger.debug(
       `No labelmap data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to labelmap. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }

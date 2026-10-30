@@ -9,6 +9,8 @@ import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
+const log = utilities.logger.loaderLog.getLogger('wadors');
+
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>([
@@ -189,7 +191,7 @@ function loadImage(
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           if (extractDone) {
-            console.warn("Couldn't decode", e);
+            log.warn("Couldn't decode", e);
             throw e;
           }
         }

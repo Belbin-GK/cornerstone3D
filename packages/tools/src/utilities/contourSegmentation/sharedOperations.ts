@@ -17,6 +17,11 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getViewportIdsWithToolToRender } from '../viewportFilters';
 import { hasToolByName } from '../../store/addTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.sharedOperations'
+);
 
 const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 
@@ -165,7 +170,7 @@ export function combinePolylines(
 ): void {
   // Check if the necessary tool for creating new combined contours is registered.
   if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
-    console.warn(
+    cs3dLogger.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered in cornerstone. Cannot combine polylines.`
     );
     return;

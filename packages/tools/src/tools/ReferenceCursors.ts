@@ -33,6 +33,11 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.ReferenceCursors'
+);
 
 /**
  * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
@@ -396,7 +401,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

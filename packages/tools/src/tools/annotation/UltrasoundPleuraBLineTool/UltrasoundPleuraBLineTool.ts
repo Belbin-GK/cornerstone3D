@@ -58,6 +58,11 @@ import {
 } from '../../../utilities/math/fan/fanUtils';
 import { calculateFanGeometry } from './utils/fanExtraction';
 import type { FanGeometry } from './utils/types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.UltrasoundPleuraBLineTool.UltrasoundPleuraBLineTool'
+);
 const { transformIndexToWorld } = utilities;
 
 type FilterFunction = (imageId: string) => boolean;
@@ -1323,7 +1328,7 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -1474,7 +1479,7 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
     pleuraAnnotationsToDraw.forEach((annotation) => {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
       drawAnnotation(annotation as UltrasoundPleuraBLineAnnotation);
@@ -1490,7 +1495,7 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
     bLineAnnotationsToDraw.forEach((annotation) => {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
       drawAnnotation(annotation as UltrasoundPleuraBLineAnnotation);

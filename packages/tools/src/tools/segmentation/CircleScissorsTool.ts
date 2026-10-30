@@ -40,6 +40,11 @@ import LabelmapBaseTool from './LabelmapBaseTool';
 import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 import getCenterAndRadiusInCanvas from '../../utilities/getCenterAndRadiusInCanvas';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.CircleScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -358,7 +363,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

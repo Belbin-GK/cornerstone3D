@@ -5,6 +5,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
+import { coreLog } from '../utilities/logger';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
@@ -60,6 +61,8 @@ interface ViewportDisplayCoords {
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'TiledRenderingEngine');
+
 class TiledRenderingEngine extends BaseRenderingEngine {
   constructor(id?: string) {
     super(id);
@@ -437,7 +440,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {

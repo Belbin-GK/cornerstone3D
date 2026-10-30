@@ -52,6 +52,11 @@ const SPHEREINDEX = {
   XMAX_YMAX_ZMIN: 12,
   XMAX_YMAX_ZMAX: 13,
 };
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.VolumeCroppingTool'
+);
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -544,9 +549,9 @@ class VolumeCroppingTool extends BaseTool {
    * // Check if handles are currently visible
    * const handlesVisible = volumeCroppingTool.getHandlesVisible();
    * if (handlesVisible) {
-   *   console.log('Cropping handles are currently shown');
+   *   logger.info('Cropping handles are currently shown');
    * } else {
-   *   console.log('Cropping handles are currently hidden');
+   *   logger.info('Cropping handles are currently hidden');
    * }
    * ```
    *
@@ -570,9 +575,9 @@ class VolumeCroppingTool extends BaseTool {
    * // Check if clipping planes are currently active
    * const planesVisible = volumeCroppingTool.getClippingPlanesVisible();
    * if (planesVisible) {
-   *   console.log('Volume is currently being cropped');
+   *   logger.info('Volume is currently being cropped');
    * } else {
-   *   console.log('Volume is displayed in full');
+   *   logger.info('Volume is displayed in full');
    * }
    * ```
    *
@@ -1067,7 +1072,7 @@ class VolumeCroppingTool extends BaseTool {
 
   _initialize3DViewports = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
       );
       return;
@@ -1075,14 +1080,16 @@ class VolumeCroppingTool extends BaseTool {
     const viewport = this._getViewport();
     const volumeActors = viewport.getActors();
     if (!volumeActors || volumeActors.length === 0) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
     const imageData = volumeActors[0].actor.getMapper().getInputData();
     if (!imageData) {
-      console.warn('VolumeCroppingTool: No image data found for volume actor.');
+      cs3dLogger.warn(
+        'VolumeCroppingTool: No image data found for volume actor.'
+      );
       return;
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';

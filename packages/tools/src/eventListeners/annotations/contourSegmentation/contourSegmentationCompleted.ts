@@ -20,6 +20,11 @@ import {
   combinePolylines,
 } from '../../../utilities/contourSegmentation/sharedOperations';
 import { Events } from '../../../enums';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'eventListeners.annotations.contourSegmentation.contourSegmentationCompleted'
+);
 
 /**
  * Default tool name for contour segmentation operations.
@@ -157,7 +162,7 @@ function isFreehandContourSegToolRegisteredForViewport(
   }
 
   if (errorMessage && !silent) {
-    console.warn(errorMessage);
+    cs3dLogger.warn(errorMessage);
   }
 
   return !errorMessage;

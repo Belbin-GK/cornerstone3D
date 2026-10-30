@@ -9,6 +9,8 @@ import type {
   StreamingData,
 } from '../wadors/loadImage';
 
+const log = utilities.logger.loaderLog.getLogger('streamRequest');
+
 const { ProgressiveIterator } = utilities;
 
 /**
@@ -131,7 +133,7 @@ export default function streamRequest(
       }
     } catch (err) {
       errorInterceptor(err);
-      console.error(err);
+      log.error(err);
       reject(err);
     }
   });

@@ -15,6 +15,11 @@ import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import type { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.ReferenceLinesTool'
+);
 
 const { EPSILON } = CONSTANTS;
 
@@ -374,7 +379,7 @@ class ReferenceLines extends AnnotationDisplayTool {
             return targetViewport.worldToCanvas(world);
           });
       } catch (err) {
-        console.log(err);
+        cs3dLogger.info(err);
       }
     }
     return canvasCoordinates;

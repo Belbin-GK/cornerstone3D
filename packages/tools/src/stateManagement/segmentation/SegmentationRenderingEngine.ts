@@ -24,6 +24,11 @@ import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationRenderingEngine'
+);
 
 const renderers = {
   [Representations.Labelmap]: labelmapDisplay,
@@ -213,9 +218,9 @@ class SegmentationRenderingEngine {
           });
         } catch (error) {
           if (process.env.NODE_ENV === 'production') {
-            console.error('Error while segmentation render');
+            cs3dLogger.error('Error while segmentation render');
           } else {
-            console.error(error);
+            cs3dLogger.error(error);
           }
         }
 

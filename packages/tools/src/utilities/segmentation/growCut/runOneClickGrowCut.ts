@@ -12,6 +12,11 @@ import {
   DEFAULT_NEGATIVE_SEEDS_COUNT,
   MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER,
 } from './constants';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.growCut.runOneClickGrowCut'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -96,7 +101,7 @@ function calculateGrowCutSeeds(
     ijkStart[2] < 0 ||
     ijkStart[2] >= numSlices
   ) {
-    console.warn('Click position is outside volume bounds.');
+    cs3dLogger.warn('Click position is outside volume bounds.');
     return null;
   }
 
@@ -147,7 +152,7 @@ function calculateGrowCutSeeds(
     minY = maxY = ijkStart[1];
     minZ = maxZ = ijkStart[2];
   } else {
-    console.warn(
+    cs3dLogger.warn(
       'Clicked voxel intensity is outside the calculated positive range. No positive seeds generated.'
     );
     return { positiveSeedIndices: new Set(), negativeSeedIndices: new Set() };
@@ -206,13 +211,13 @@ function calculateGrowCutSeeds(
   }
 
   if (positiveSeedIndices.size >= maxPositiveSeeds) {
-    console.debug(
+    cs3dLogger.debug(
       `Reached maximum number of positive seeds (${maxPositiveSeeds}). Stopping BFS.`
     );
   }
 
   if (positiveSeedIndices.size === 0) {
-    console.warn('No positive seeds found after BFS.');
+    cs3dLogger.warn('No positive seeds found after BFS.');
     return { positiveSeedIndices: new Set(), negativeSeedIndices: new Set() };
   }
 
@@ -305,13 +310,13 @@ function calculateGrowCutSeeds(
   }
 
   if (negativeSeedIndices.size === 0) {
-    console.warn(
+    cs3dLogger.warn(
       'Could not find any negative seeds. GrowCut might fail or produce poor results.'
     );
   }
 
-  console.debug('positiveSeedIndices', positiveSeedIndices.size);
-  console.debug('negativeSeedIndices', negativeSeedIndices.size);
+  cs3dLogger.debug('positiveSeedIndices', positiveSeedIndices.size);
+  cs3dLogger.debug('negativeSeedIndices', negativeSeedIndices.size);
 
   return { positiveSeedIndices, negativeSeedIndices };
 }
@@ -363,7 +368,7 @@ async function runOneClickGrowCut({
     positiveSeedIndices.size > maxPositiveSeeds ||
     negativeSeedIndices.size < minNegativeSeeds
   ) {
-    console.warn(
+    cs3dLogger.warn(
       'Not enough seeds found. GrowCut might fail or produce poor results.'
     );
     return labelmap;

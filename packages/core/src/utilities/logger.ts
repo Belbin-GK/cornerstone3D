@@ -23,7 +23,7 @@ export type Logger = LogLevelLogger & {
  * for forwards compatibility.
  */
 export function getRootLogger(name: string): Logger {
-  const logger = loglevel.getLogger(name[0]) as Logger;
+  const logger = loglevel.getLogger(name) as Logger;
   logger.getLogger = (...names: string[]) => {
     return getRootLogger(`${name}.${names.join('.')}`);
   };
@@ -67,7 +67,13 @@ export const cs3dLog = getRootLogger('cs3d');
  */
 export const coreLog = cs3dLog.getLogger('core');
 export const toolsLog = cs3dLog.getLogger('tools');
+export const adaptersLog = cs3dLog.getLogger('adapters');
 export const loaderLog = cs3dLog.getLogger('dicomImageLoader');
+export const niftiVolumeLoaderLog = cs3dLog.getLogger('niftiVolumeLoader');
+export const polySegLog = cs3dLog.getLogger('polymorphicSegmentation');
+export const labelmapInterpolationLog = cs3dLog.getLogger(
+  'labelmapInterpolation'
+);
 export const aiLog = cs3dLog.getLogger('ai');
 
 /**

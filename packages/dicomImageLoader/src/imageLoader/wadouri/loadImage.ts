@@ -18,7 +18,7 @@ const { ImageQualityStatus } = Enums;
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
   imageLoadObject.decache = function () {
-    // console.log('decache');
+    // log.debug('decache');
     const parsedImageId = parseImageId(imageId);
 
     dataSetCacheManager.unload(parsedImageId.url);

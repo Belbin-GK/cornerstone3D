@@ -11,6 +11,11 @@ import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
 import { Events } from '../enums';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation_4X'
+);
 
 const {
   rotateDirectionCosinesInPlane,
@@ -274,7 +279,7 @@ export async function generateToolState(
   const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
 
   if (!imagePlaneModule) {
-    console.warn('Insufficient metadata, imagePlaneModule missing.');
+    cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
   const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
@@ -307,7 +312,7 @@ export async function generateToolState(
     pixelData = decode(rleEncodedFrames, multiframe.Rows, multiframe.Columns);
 
     if (multiframe.BitsStored === 1) {
-      console.warn('No implementation for rle + bitbacking.');
+      cs3dLogger.warn('No implementation for rle + bitbacking.');
 
       return;
     }
@@ -482,16 +487,10 @@ export async function generateToolState(
 //         imageIds[imageIds.length - 1]
 //     );
 
-//     console.log(firstImagePlaneModule);
-//     console.log(lastImagePlaneModule);
-
 //     const corners = [
 //         ...getCorners(firstImagePlaneModule),
 //         ...getCorners(lastImagePlaneModule)
 //     ];
-
-//     console.log(`corners:`);
-//     console.log(corners);
 
 //     const indexToWorld = mat4.create();
 
@@ -579,7 +578,6 @@ export async function generateToolState(
 // }
 
 // function getCorners(imagePlaneModule) {
-//     // console.log(imagePlaneModule);
 
 //     const {
 //         rows,
@@ -703,7 +701,9 @@ export function findReferenceSourceImageId(
 
   // 2. SharedFunctionalGroupsSequence DerivationImageSequence / SourceImageSequence
   if (!frameSourceImageSequence && SharedFunctionalGroupsSequence) {
-    console.warn('Using SharedFunctionalGroupsSequence SourceImageSequence.');
+    cs3dLogger.warn(
+      'Using SharedFunctionalGroupsSequence SourceImageSequence.'
+    );
 
     frameSourceImageSequence = getSourceImageSequenceItem(
       SharedFunctionalGroupsSequence,
@@ -713,7 +713,7 @@ export function findReferenceSourceImageId(
 
   // 3. Top-level SourceImageSequence (legacy fallback)
   if (!frameSourceImageSequence && SourceImageSequence?.length) {
-    console.warn(
+    cs3dLogger.warn(
       'DerivationImageSequence not present, using top-level SourceImageSequence assuming SEG has the same geometry as the source image.'
     );
 
@@ -798,7 +798,7 @@ export function checkSEGsOverlapping(
   for (let frameSegment = 0; frameSegment < groupsLen; ++frameSegment) {
     const segmentIndex = getSegmentIndex(multiframe, frameSegment);
     if (segmentIndex === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         'Could not retrieve the segment index for frame segment ' +
           frameSegment +
           ', skipping this frame.'
@@ -816,7 +816,7 @@ export function checkSEGsOverlapping(
     );
 
     if (!imageId) {
-      console.warn(
+      cs3dLogger.warn(
         "Image not present in stack, can't import frame : " + frameSegment + '.'
       );
       continue;
@@ -865,7 +865,7 @@ export function checkSEGsOverlapping(
       );
 
       if (!alignedPixelDataI) {
-        console.warn(
+        cs3dLogger.warn(
           'Individual SEG frames are out of plane with respect to the first SEG frame, this is not yet supported, skipping this frame.'
         );
         continue;
@@ -998,7 +998,7 @@ export function insertOverlappingPixelDataPlanar(
       );
 
       if (!imageId) {
-        console.warn(
+        cs3dLogger.warn(
           "Image not present in stack, can't import frame : " + i + '.'
         );
         continue;
@@ -1185,7 +1185,7 @@ export function insertPixelDataPlanar(
         );
 
         if (!imageId) {
-          console.warn(
+          cs3dLogger.warn(
             "Image not present in stack, can't import frame : " + i + '.'
           );
           continue;
@@ -1366,7 +1366,7 @@ export function getImageIdOfSourceImageBySourceImageSequence(
   const baseImageIds = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 
   if (!baseImageIds) {
-    console.warn(
+    cs3dLogger.warn(
       `No imageId found for SOPInstanceUID: ${ReferencedSOPInstanceUID}`
     );
     return undefined;
@@ -1508,7 +1508,7 @@ export function getImageIdOfReferencedFrame(
   const baseImageIds = sopUIDImageIdIndexMap[sopInstanceUid];
 
   if (!baseImageIds) {
-    console.warn(`No imageId found for SOPInstanceUID: ${sopInstanceUid}`);
+    cs3dLogger.warn(`No imageId found for SOPInstanceUID: ${sopInstanceUid}`);
     return undefined;
   }
 
@@ -1718,7 +1718,7 @@ export function calculateCentroid(
     const imagePlaneModule = metadataProvider.get('imagePlaneModule', imageId);
 
     if (!imagePlaneModule) {
-      console.debug(
+      cs3dLogger.debug(
         'Missing imagePlaneModule metadata for centroid calculation'
       );
       continue;
