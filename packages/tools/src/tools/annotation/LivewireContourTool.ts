@@ -43,6 +43,11 @@ import type { AnnotationStyle } from '../../types/AnnotationStyle';
 import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.LivewireContourTool'
+);
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -782,7 +787,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
       textBox.hasMoved = true;
     } else if (handleIndex === undefined) {
-      console.warn('Drag annotation not implemented');
+      cs3dLogger.warn('Drag annotation not implemented');
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;

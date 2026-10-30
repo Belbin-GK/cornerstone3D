@@ -8,6 +8,11 @@ import type { SVGDrawingHelper } from '../../../../types';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { drawCircle as drawCircleSvg } from '../../../../drawingSvg';
 import { getCenterAndRadiusInCanvas } from '../../../../utilities/getCenterAndRadiusInCanvas';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.strategies.compositions.circularCursor'
+);
 
 export default {
   [StrategyCallbacks.CalculateCursorGeometry]: function (
@@ -120,7 +125,7 @@ export default {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return;
     }
 

@@ -30,6 +30,11 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
 import LabelmapBaseTool from './LabelmapBaseTool';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.SphereScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -341,7 +346,7 @@ class SphereScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

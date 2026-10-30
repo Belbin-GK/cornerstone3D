@@ -5,6 +5,9 @@ import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getSupportedTextureFormats } from './utilities/textureSupport';
 import { RenderingEngineModeEnum } from './enums';
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('init');
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -136,7 +139,7 @@ function init(configuration = config): boolean {
     if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;
     } else {
-      console.log(
+      log.info(
         'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
       );
     }
@@ -144,10 +147,10 @@ function init(configuration = config): boolean {
 
   const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
-    console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    log.info('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    console.log('CornerstoneRender: using GPU rendering');
+    log.info('CornerstoneRender: using GPU rendering');
   }
 
   csRenderInitialized = true;

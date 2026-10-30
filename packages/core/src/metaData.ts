@@ -1,5 +1,8 @@
 // This module defines a way to access various metadata about an imageId.  This layer of abstraction exists
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('metaData');
 
 const providers = [];
 
@@ -111,7 +114,7 @@ export function getNormalized(
         Object.assign(result, capitalizedData);
       }
     } catch (error) {
-      console.error(`Error retrieving ${t} data:`, error);
+      log.error(`Error retrieving ${t} data:`, error);
     }
   }
 

@@ -55,6 +55,11 @@ import { isAnnotationLocked } from '../stateManagement/annotation/annotationLock
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.VolumeCroppingControlTool'
+);
 
 type ReferenceLine = [
   viewport: {
@@ -256,7 +261,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const viewport = renderingEngine.getViewport(viewportId);
       const volumeActors = viewport.getActors();
       if (!volumeActors || !volumeActors.length) {
-        console.warn(
+        cs3dLogger.warn(
           `VolumeCroppingControlTool: No volume actors found in viewport ${viewportId}.`
         );
         return;
@@ -338,7 +343,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     point: Types.Point3;
   } => {
     if (!renderingEngineId || !viewportId) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingControlTool: Missing renderingEngineId or viewportId'
       );
       return;
@@ -549,7 +554,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo[0]) {
-      console.warn(
+      cs3dLogger.warn(
         '  _computeToolCenter : No valid viewportsInfo for computeToolCenter.'
       );
       return;

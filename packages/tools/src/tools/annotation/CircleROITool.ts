@@ -64,6 +64,11 @@ import {
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.CircleROITool'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -781,7 +786,7 @@ class CircleROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

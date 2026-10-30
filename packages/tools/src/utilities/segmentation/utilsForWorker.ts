@@ -15,6 +15,11 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.utilsForWorker'
+);
 
 /**
  * Trigger worker progress event
@@ -44,7 +49,7 @@ export const getSegmentationDataForWorker = (
   const { Labelmap } = representationData;
 
   if (!Labelmap) {
-    console.debug('No labelmap found for segmentation', segmentationId);
+    cs3dLogger.debug('No labelmap found for segmentation', segmentationId);
     return null;
   }
 

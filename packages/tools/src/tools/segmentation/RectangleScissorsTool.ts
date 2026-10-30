@@ -41,6 +41,11 @@ import {
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -387,7 +392,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

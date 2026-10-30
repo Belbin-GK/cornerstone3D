@@ -25,6 +25,11 @@ import type {
 } from '../types';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.OverlayGridTool'
+);
 
 const { EPSILON } = CONSTANTS;
 
@@ -68,7 +73,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
   _init = (): void => {
     const sourceImageIds = this.configuration.sourceImageIds;
     if (!sourceImageIds?.length) {
-      console.warn(
+      cs3dLogger.warn(
         'OverlayGridTool: No sourceImageIds provided in configuration'
       );
       return;
@@ -80,7 +85,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
     );
 
     if (!imagePlaneModule) {
-      console.warn(
+      cs3dLogger.warn(
         'OverlayGridTool: No imagePlaneModule found for sourceImageIds'
       );
       return;
@@ -91,7 +96,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
     const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
 
     if (!viewportsInfo?.length) {
-      console.warn('OverlayGridTool: No viewports found');
+      cs3dLogger.warn('OverlayGridTool: No viewports found');
       return;
     }
 

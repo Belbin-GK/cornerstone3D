@@ -45,6 +45,11 @@ import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.ProbeTool'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -520,7 +525,7 @@ class ProbeTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

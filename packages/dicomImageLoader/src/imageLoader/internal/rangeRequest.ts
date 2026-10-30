@@ -1,4 +1,5 @@
 import type { Types, Enums } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { getOptions } from './options';
 import type {
   LoaderXhrRequestError,
@@ -8,6 +9,8 @@ import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
+
+const log = utilities.logger.loaderLog.getLogger('rangeRequest');
 
 type RangeRetrieveOptions = Types.RangeRetrieveOptions;
 
@@ -53,7 +56,7 @@ export default function rangeRequest(
       const error = new Error('request failed') as LoaderXhrRequestError;
       globalOptions.errorInterceptor(error);
     } else {
-      console.warn('rangeRequest:Caught', err);
+      log.warn('rangeRequest:Caught', err);
     }
   };
 
@@ -115,7 +118,7 @@ export default function rangeRequest(
       });
     } catch (err) {
       errorInterceptor(err);
-      console.error(err);
+      log.error(err);
       reject(err);
     }
   });

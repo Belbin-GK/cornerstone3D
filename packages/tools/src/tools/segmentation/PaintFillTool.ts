@@ -27,6 +27,11 @@ import {
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.PaintFillTool'
+);
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -136,7 +141,7 @@ class PaintFillTool extends BaseTool {
     );
 
     if (fixedDimension === undefined) {
-      console.warn('Oblique paint fill not yet supported');
+      cs3dLogger.warn('Oblique paint fill not yet supported');
       return;
     }
 

@@ -4,6 +4,7 @@ import { getConfiguration } from '../init';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
@@ -29,6 +30,8 @@ import type { VtkOffscreenMultiRenderWindow } from '../types';
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'ContextPoolRenderingEngine');
+
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private contextPool: WebGLContextPool;
 
@@ -325,7 +328,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
 

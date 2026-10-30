@@ -14,6 +14,9 @@ import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'VoxelManager');
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess
@@ -361,7 +364,7 @@ export default class VoxelManager<T> {
     const map = this.map as RLEVoxelMap<T>;
 
     if (!map) {
-      console.warn(
+      log.warn(
         'No map found, you need to use a map voxel manager to use rleForEach'
       );
       return;
@@ -492,9 +495,7 @@ export default class VoxelManager<T> {
       ) => PixelDataTypedArray;
     }
 
-    console.warn(
-      'No scalar data available or can be used to get the constructor'
-    );
+    log.warn('No scalar data available or can be used to get the constructor');
 
     // Return a default constructor (e.g., Float32Array) if no constructor is available
     return Float32Array as new (length: number) => PixelDataTypedArray;
@@ -741,14 +742,14 @@ export default class VoxelManager<T> {
       const imageId = imageIds[sliceIndex];
 
       if (!imageId) {
-        console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+        log.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
         return { pixelData: null, pixelIndex: null };
       }
 
       const image = cache.getImage(imageId);
 
       if (!image) {
-        console.warn(`Image not found for imageId: ${imageId}`);
+        log.warn(`Image not found for imageId: ${imageId}`);
         return { pixelData: null, pixelIndex: null };
       }
 
@@ -1047,7 +1048,7 @@ export default class VoxelManager<T> {
     if (dimensionGroupNumber !== undefined) {
       activeDimensionGroup = dimensionGroupNumber - 1;
     } else if (timePoint !== undefined) {
-      console.warn(
+      log.warn(
         'Warning: timePoint parameter is deprecated. Please use dimensionGroupNumber instead. timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       activeDimensionGroup = timePoint;
@@ -1109,7 +1110,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
-      console.warn(
+      log.warn(
         'Warning: setTimePoint is deprecated. Please use setDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1131,7 +1132,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
-      console.warn(
+      log.warn(
         'Warning: getAtIndexAndTimePoint is deprecated. Please use getAtIndexAndDimensionGroup instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1148,7 +1149,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
-      console.warn(
+      log.warn(
         'Warning: getTimePointScalarData is deprecated. Please use getDimensionGroupScalarData instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1164,7 +1165,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
-      console.warn(
+      log.warn(
         'Warning: getCurrentTimePointScalarData is deprecated. Please use getCurrentDimensionGroupScalarData instead.'
       );
       // @ts-ignore
@@ -1178,7 +1179,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getCurrentTimePoint = () => {
-      console.warn(
+      log.warn(
         'Warning: getCurrentTimePoint is deprecated. Please use getCurrentDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       return activeDimensionGroup;

@@ -4,6 +4,9 @@ import type {
   IVolumeInput,
   IRenderingEngine,
 } from '../../types';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'addVolumesToViewports');
 
 /**
  * For each provided viewport it adds a volume to the viewport using the
@@ -34,7 +37,7 @@ async function addVolumesToViewports(
 
     // if not instance of BaseVolumeViewport, throw
     if (!(viewport instanceof BaseVolumeViewport)) {
-      console.warn(
+      log.warn(
         `Viewport with Id ${viewportId} is not a BaseVolumeViewport. Cannot add volume to this viewport.`
       );
 
