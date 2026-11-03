@@ -24,11 +24,13 @@ export async function updateSurfaceData(segmentationId) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
 
-  if (!surfacesObj) {
+  const segmentation = getSegmentation(segmentationId);
+
+  // The segmentation may have been removed while the surfaces were being computed
+  if (!surfacesObj || !segmentation?.representationData.Surface) {
     return;
   }
 
-  const segmentation = getSegmentation(segmentationId);
   const indices = getUniqueSegmentIndices(segmentationId);
 
   if (!indices.length) {

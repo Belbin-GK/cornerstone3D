@@ -20,14 +20,46 @@ export type RawSurfacesData = {
   data: Types.SurfaceData;
 }[];
 
+type SurfacesData = Awaited<ReturnType<typeof createAndCacheSurfacesFromRaw>>;
+
+// Full-segmentation surface computations in flight, keyed by segmentationId
+const inFlightComputations = new Map<string, Promise<SurfacesData>>();
+
 /**
  * Computes surface data for a given segmentation.
+ *
+ * Concurrent requests for the full segmentation share a single in-flight
+ * computation, since polySeg runs on one worker and duplicate builds would
+ * otherwise queue up behind each other.
+ *
  * @param segmentationId - The ID of the segmentation.
  * @param options - Additional options for surface computation.
  * @returns A promise that resolves to the computed surface data.
  * @throws An error if there is no surface data available for the segmentation.
  */
-export async function computeSurfaceData(
+export function computeSurfaceData(
+  segmentationId: string,
+  options: PolySegConversionOptions = {}
+): Promise<SurfacesData> {
+  // A segmentIndices subset is a different result, so only share full builds
+  if (options.segmentIndices?.length) {
+    return _computeSurfaceData(segmentationId, options);
+  }
+
+  const existing = inFlightComputations.get(segmentationId);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = _computeSurfaceData(segmentationId, options).finally(() =>
+    inFlightComputations.delete(segmentationId)
+  );
+  inFlightComputations.set(segmentationId, promise);
+
+  return promise;
+}
+
+async function _computeSurfaceData(
   segmentationId: string,
   options: PolySegConversionOptions = {}
 ) {
