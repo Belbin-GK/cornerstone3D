@@ -26,6 +26,12 @@ export async function createAndCacheSurfacesFromRaw(
 
   const geometryIds = new Map<number, string>();
 
+  // The segmentation may have been removed while the surfaces were being
+  // computed; don't cache orphaned geometries for it
+  if (!segmentation) {
+    return { geometryIds };
+  }
+
   // Loop through raw surfaces data and create surfaces
   const promises = Object.keys(rawSurfacesData).map(async (index: string) => {
     const rawSurfaceData = rawSurfacesData[index];

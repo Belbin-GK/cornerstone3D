@@ -6,6 +6,7 @@ import type { SegmentationRepresentation } from '../../../types/SegmentationStat
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { getSegmentationRepresentation } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
@@ -83,6 +84,18 @@ async function render(
       Representations.Surface,
       () => polySeg.computeSurfaceData(segmentationId, { viewport })
     );
+
+    // The segmentation, or its surface representation in this viewport, may
+    // have been removed while computing
+    if (
+      !getSegmentation(segmentationId) ||
+      !getSegmentationRepresentation(viewport.id, {
+        segmentationId,
+        type: Representations.Surface,
+      })
+    ) {
+      return;
+    }
 
     if (!SurfaceData) {
       throw new Error(

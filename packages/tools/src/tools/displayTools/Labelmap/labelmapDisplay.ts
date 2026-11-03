@@ -148,6 +148,12 @@ async function render(
       }
     );
 
+    // The segmentation may have been removed while computing
+    if (!getSegmentation(segmentationId)) {
+      polySegConversionInProgress = false;
+      return;
+    }
+
     if (!labelmapData) {
       throw new Error(
         `No labelmap data found for segmentationId ${segmentationId}.`
