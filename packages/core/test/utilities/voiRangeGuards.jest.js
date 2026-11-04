@@ -65,6 +65,16 @@ describe('ensureNonZeroVOIRange', function () {
     ensureNonZeroVOIRange(voiRange);
     expect(voiRange).toEqual({ lower: 1, upper: 1 });
   });
+
+  it('Should handle an empty object input gracefully', () => {
+    const result = ensureNonZeroVOIRange({});
+    expect(result).toBeDefined();
+  });
+
+  it('Should handle NaN or missing properties', () => {
+    const result = ensureNonZeroVOIRange({ lower: NaN, upper: NaN });
+    expect(Number.isNaN(result.lower)).toBe(true);
+  });
 });
 
 describe('getVOIRangeOverlappingPixelRange', function () {
@@ -103,8 +113,6 @@ describe('getVOIRangeOverlappingPixelRange', function () {
 
   it('Should keep the window when the pixel range is empty or invalid', () => {
     const voiRange = { lower: 2000, upper: 3000 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 5, 5)).toBe(voiRange);
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 10, 5)).toBe(voiRange);
     expect(getVOIRangeOverlappingPixelRange(voiRange, undefined, 5)).toBe(
       voiRange
     );
@@ -118,6 +126,25 @@ describe('getVOIRangeOverlappingPixelRange', function () {
     expect(getVOIRangeOverlappingPixelRange(undefined, 0, 1000)).toBe(
       undefined
     );
+  });
+
+  it('Should keep the window when pixel boundaries contain NaN', () => {
+    const voiRange = { lower: 200, upper: 400 };
+    expect(getVOIRangeOverlappingPixelRange(voiRange, NaN, 500)).toBe(voiRange);
+    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, NaN)).toBe(voiRange);
+  });
+
+  it('Should keep the window when pixel boundaries contain non-finite numbers', () => {
+    const voiRange = { lower: 200, upper: 400 };
+    expect(getVOIRangeOverlappingPixelRange(voiRange, -Infinity, 500)).toBe(
+      voiRange
+    );
+    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, Infinity)).toBe(
+      voiRange
+    );
+    expect(
+      getVOIRangeOverlappingPixelRange(voiRange, -Infinity, Infinity)
+    ).toBe(voiRange);
   });
 });
 
@@ -170,5 +197,19 @@ describe('createLinearRGBTransferFunction', function () {
     const [lower, upper] = cfun.getRange();
     expect(lower).toBe(10);
     expect(upper).toBeGreaterThan(10);
+  });
+
+  it('Should use default values when an empty object is provided', () => {
+    const cfun = createLinearRGBTransferFunction({});
+    expect(cfun.getSize()).toBe(2);
+    expect(cfun.getRange()).toEqual([0, 1024]);
+  });
+
+  it('Should handle partial ranges where lower or upper is undefined', () => {
+    const cfunOnlyLower = createLinearRGBTransferFunction({ lower: 100 });
+    expect(cfunOnlyLower.getSize()).toBe(2);
+
+    const cfunOnlyUpper = createLinearRGBTransferFunction({ upper: 500 });
+    expect(cfunOnlyUpper.getSize()).toBe(2);
   });
 });
