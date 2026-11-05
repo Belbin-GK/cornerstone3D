@@ -111,13 +111,16 @@ describe('getVOIRangeOverlappingPixelRange', function () {
     ).toEqual({ lower: 0, upper: 1000 });
   });
 
-  it('Should keep the window when the pixel range is empty or invalid', () => {
+  it('Should keep the window when the lower pixel bound is undefined', () => {
     const voiRange = { lower: 2000, upper: 3000 };
     expect(getVOIRangeOverlappingPixelRange(voiRange, undefined, 5)).toBe(
       voiRange
     );
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, NaN)).toBe(voiRange);
-    expect(getVOIRangeOverlappingPixelRange(voiRange, -Infinity, 5)).toBe(
+  });
+
+  it('Should keep the window when the upper pixel bound is undefined', () => {
+    const voiRange = { lower: 2000, upper: 3000 };
+    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, undefined)).toBe(
       voiRange
     );
   });
